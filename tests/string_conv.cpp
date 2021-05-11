@@ -108,6 +108,9 @@ TEST(string_conv, to_string_float_precision) {
   EXPECT_EQ("123.46", fst::string_conv::to_string<2>(buffer, 123.456f));
   EXPECT_EQ("-123.46", fst::string_conv::to_string<2>(buffer, -123.456f));
 
+  EXPECT_EQ("40.00", fst::string_conv::to_string<2>(buffer, 40.0f));
+  EXPECT_EQ("-40.00", fst::string_conv::to_string<2>(buffer, -40.0f));
+
   EXPECT_EQ("0.70", fst::string_conv::to_string<2>(buffer, 0.70f));
 }
 
