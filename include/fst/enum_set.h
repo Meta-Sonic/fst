@@ -108,8 +108,8 @@ public:
   inline constexpr const_reference operator[](value_type e) noexcept { return _array[(std::size_t)e]; }
   inline constexpr const_reference operator[](size_type __index) const noexcept { return _array[__index]; }
 
-  inline constexpr const_iterator begin() const noexcept { return _array.begin(); }
-  inline constexpr const_iterator end() const noexcept { return _array.end(); }
+  inline constexpr const_iterator begin() const noexcept { return _array.data(); }
+  inline constexpr const_iterator end() const noexcept { return _array.data() + _array.size(); }
   inline constexpr size_type size() const noexcept { return _array.size(); }
   inline constexpr bool empty() const noexcept { return _array.empty(); }
 
