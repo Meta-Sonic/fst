@@ -70,7 +70,11 @@ namespace detail {
 #pragma clang diagnostic pop
 #endif
 
-    inline constexpr rect(const point_type& pt_ = point_type(0, 0), const size_type& size_ = size_type(0, 0))
+    inline constexpr rect()
+        : position()
+        , size() {}
+
+    inline constexpr rect(const point_type& pt_, const size_type& size_)
         : position(pt_)
         , size(size_) {}
 
