@@ -40,9 +40,10 @@
 #include <stdexcept>
 
 namespace fst {
-class byte_view : public fst::span<const std::uint8_t> {
+template <typename _Tp = const std::uint8_t>
+class basic_byte_view : public fst::span<_Tp> {
 public:
-  using span_type = fst::span<const std::uint8_t>;
+  using span_type = fst::span<_Tp>;
   using value_type = typename span_type::value_type;
   using size_type = typename span_type::size_type;
   using difference_type = typename span_type::difference_type;
@@ -63,13 +64,13 @@ public:
   using span_type::span_type;
 
   template <typename T>
-  inline byte_view(const fst::span<T>& buffer)
+  inline basic_byte_view(const fst::span<T>& buffer)
       : span_type((pointer)buffer.data(), buffer.size_bytes()) {}
 
   using span_type::operator=;
 
   template <typename T>
-  inline byte_view& operator=(const fst::span<T>& buffer) {
+  inline basic_byte_view& operator=(const fst::span<T>& buffer) {
     return (*this).operator=(byte_span((pointer)buffer.data(), buffer.size_bytes()));
   }
 
@@ -239,4 +240,6 @@ public:
     }
   }
 };
+
+using byte_view = basic_byte_view<>;
 } // namespace fst.
