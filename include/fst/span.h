@@ -2,7 +2,7 @@
 
 #include "fst/common.h"
 
-#if __FST_CPP_20__
+#if __FST_CPP_20__ || __has_include(<span>)
 #include <span>
 
 namespace fst {
