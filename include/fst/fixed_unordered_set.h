@@ -101,8 +101,8 @@ public:
 
   inline const_reference operator[](size_type index) const { return _array[index]; }
 
-  inline const_iterator begin() const noexcept { return _array.begin(); }
-  inline const_iterator end() const noexcept { return _array.end(); }
+  inline const_iterator begin() const noexcept { return _array.data(); }
+  inline const_iterator end() const noexcept { return _array.data() + _array.size(); }
   inline size_type size() const noexcept { return _array.size(); }
   inline bool empty() const noexcept { return _array.empty(); }
 
