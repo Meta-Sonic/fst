@@ -48,16 +48,14 @@ namespace detail {
 
     value_type width, height;
 
-    inline constexpr size(value_type W = 0, value_type H = 0) noexcept {
-      width = W;
-      height = H;
-    }
+    inline constexpr size(value_type W = 0, value_type H = 0) noexcept
+        : width(W)
+        , height(H) {}
 
     template <typename T>
-    inline constexpr size(const size<T>& s) noexcept {
-      width = (value_type)s.width;
-      height = (value_type)s.height;
-    }
+    inline constexpr size(const size<T>& s) noexcept
+        : width((value_type)s.width)
+        , height((value_type)s.height) {}
 
     inline constexpr size(const pair_type& p) noexcept
         : width(p.first)

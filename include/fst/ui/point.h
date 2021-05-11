@@ -48,22 +48,19 @@ namespace detail {
 
     value_type x, y;
 
-    inline constexpr point(value_type X = 0, value_type Y = 0) noexcept {
-      x = X;
-      y = Y;
-    }
+    inline constexpr point(value_type X = 0, value_type Y = 0) noexcept
+        : x(X)
+        , y(Y) {}
 
     template <typename T>
-    inline constexpr point(T X = 0, T Y = 0) noexcept {
-      x = (value_type)X;
-      y = (value_type)Y;
-    }
+    inline constexpr point(T X = 0, T Y = 0) noexcept
+        : x((value_type)X)
+        , y((value_type)Y) {}
 
     template <typename T>
-    inline constexpr point(const point<T>& pt) noexcept {
-      x = (value_type)pt.x;
-      y = (value_type)pt.y;
-    }
+    inline constexpr point(const point<T>& pt) noexcept
+        : x((value_type)pt.x)
+        , y((value_type)pt.y) {}
 
     inline constexpr point(const pair_type& p) noexcept
         : x(p.first)
