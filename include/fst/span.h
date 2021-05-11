@@ -2,12 +2,6 @@
 
 #include "fst/common.h"
 
-//#if defined __has_include
-//#define __FST_HAS_STD_SPAN__ __has_include(<span>)
-//#else
-//#define __FST_HAS_STD_SPAN__ 0
-//#endif
-
 #ifdef __cpp_lib_span
 #define __FST_HAS_STD_SPAN__ __cpp_lib_span
 #else

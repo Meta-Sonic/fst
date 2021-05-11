@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "fst/print.h"
-#include "fst/string_conv.h"
+#include <fst/print>
+#include <fst/string_conv>
 #include <cstdlib>
 #include <array>
 #include <random>
@@ -111,7 +111,17 @@ TEST(string_conv, to_string_float_precision) {
   EXPECT_EQ("40.00", fst::string_conv::to_string<2>(buffer, 40.0f));
   EXPECT_EQ("-40.00", fst::string_conv::to_string<2>(buffer, -40.0f));
 
+  EXPECT_EQ("41.10", fst::string_conv::to_string<2>(buffer, 41.1f));
+  EXPECT_EQ("-41.10", fst::string_conv::to_string<2>(buffer, -41.1f));
+
+  EXPECT_EQ("41.12", fst::string_conv::to_string<2>(buffer, 41.12f));
+  EXPECT_EQ("-41.12", fst::string_conv::to_string<2>(buffer, -41.12f));
+
+  EXPECT_EQ("51.00", fst::string_conv::to_string<2>(buffer, 51.00f));
+  EXPECT_EQ("-51.00", fst::string_conv::to_string<2>(buffer, -51.00f));
+
   EXPECT_EQ("0.70", fst::string_conv::to_string<2>(buffer, 0.70f));
+  EXPECT_EQ("-0.70", fst::string_conv::to_string<2>(buffer, -0.70f));
 }
 
 // inline std::vector<std::string> init_int_numbers() {
@@ -136,32 +146,32 @@ TEST(string_conv, to_string_float_precision) {
  TEST(string_conv, to_int) {
   {
     std::string str = std::to_string(-1000);
-    EXPECT_EQ(std::atoi(str.c_str()), fst::string_conv::to_number<int>(str));
+    EXPECT_EQ(std::atoi(str.c_str()), (int)fst::string_conv::to_number<int>(str));
   }
 
   {
     std::string str = std::to_string(1000);
-    EXPECT_EQ(std::atoi(str.c_str()), fst::string_conv::to_number<int>(str));
+    EXPECT_EQ(std::atoi(str.c_str()), (int)fst::string_conv::to_number<int>(str));
   }
 
   {
     std::string str = std::to_string(0);
-    EXPECT_EQ(std::atoi(str.c_str()), fst::string_conv::to_number<int>(str));
+    EXPECT_EQ(std::atoi(str.c_str()), (int)fst::string_conv::to_number<int>(str));
   }
 
   {
     std::string str = std::to_string(-0);
-    EXPECT_EQ(std::atoi(str.c_str()), fst::string_conv::to_number<int>(str));
+    EXPECT_EQ(std::atoi(str.c_str()), (int)fst::string_conv::to_number<int>(str));
   }
 
   {
     std::string str = std::to_string(std::numeric_limits<int>::max());
-    EXPECT_EQ(std::atoi(str.c_str()), fst::string_conv::to_number<int>(str));
+    EXPECT_EQ(std::atoi(str.c_str()), (int)fst::string_conv::to_number<int>(str));
   }
 
   {
     std::string str = std::to_string(std::numeric_limits<int>::min());
-    EXPECT_EQ(std::atoi(str.c_str()), fst::string_conv::to_number<int>(str));
+    EXPECT_EQ(std::atoi(str.c_str()), (int)fst::string_conv::to_number<int>(str));
   }
 }
 

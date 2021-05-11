@@ -731,13 +731,14 @@ namespace detail {
       std::string_view str = to_string(buffer, dec.significand);
 
       if (dec.exponent == 0) {
+        fst::unmanaged_string u_str(buffer, str.size());
         if (dec.is_negative) {
-          fst::unmanaged_string u_str(buffer, str.size());
           u_str.insert(0, 1, '-');
-          return std::string_view(u_str.data(), u_str.size());
         }
 
-        return str;
+        u_str.append('.');
+        u_str.append(_Precision - dec.exponent, '0');
+        return std::string_view(u_str.data(), u_str.size());
       }
 
       if (dec.significand == 0) {

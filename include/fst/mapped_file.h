@@ -140,11 +140,11 @@ public:
   }
 
   bool open(const std::filesystem::path& file_path) {
-    fst::print("mapped_file : Before close");
+    //    fst::print("mapped_file : Before close");
     if (_data) {
       close();
     }
-    fst::print("mapped_file : After close");
+    //    fst::print("mapped_file : After close");
 
 #if __FST_MAPPED_FILE_USE_WINDOWS_MEMORY_MAP
     std::filesystem::path w_path = file_path;
@@ -173,11 +173,11 @@ public:
     }
 
     pointer data = (pointer)MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, size);
-    fst::print("mapped_file : MapViewOfFile", data == nullptr);
+    //    fst::print("mapped_file : MapViewOfFile", data == nullptr);
 
     // We can call CloseHandle here, but it will not be closed until we unmap the view.
     CloseHandle(hMap);
-    fst::print("mapped_file: ", data, size);
+    //    fst::print("mapped_file: ", data, size);
     _data = data;
     _size = (size_type)size;
     return true;
