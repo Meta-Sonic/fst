@@ -70,7 +70,7 @@ inline std::filesystem::path get_global_app_directory() { return "/Applications"
 #elif __FST_WINDOWS__
 namespace system_detail {
   inline std::filesystem::path get_window_special_folder_path(int type) {
-    WCHAR path[MAX_PATH + 256];
+    char path[MAX_PATH + 256];
     if (SHGetSpecialFolderPath(nullptr, &path[0], type, FALSE)) {
       return std::filesystem::path(path);
     }
