@@ -33,6 +33,7 @@
 
 #pragma once
 #include "fst/traits.h"
+#include "fst/range.h"
 #include <iostream>
 #include <iomanip>
 #include <ctime>
@@ -75,6 +76,13 @@ inline void print_element(std::ostream& stream, const T& t) {
     print_element(stream, t.first);
     stream << ", ";
     print_element(stream, t.second);
+    stream << "}";
+  }
+  else if constexpr (is_range<T>::value) {
+    stream << "{";
+    print_element(stream, t.min);
+    stream << ", ";
+    print_element(stream, t.max);
     stream << "}";
   }
   else if constexpr (is_tuple<T>::value) {

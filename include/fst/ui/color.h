@@ -92,6 +92,11 @@ public:
 
   inline constexpr color with_alpha(std::uint8_t alpha) const { return color(red(), green(), blue(), alpha); }
 
+  /// mu should be between [0, 1]
+  inline constexpr color operator*(float mu) const {
+    return color(red() * mu, green() * mu, blue() * mu, alpha() * mu);
+  }
+
 private:
   enum shift : std::uint32_t {
     shift_red = 24,

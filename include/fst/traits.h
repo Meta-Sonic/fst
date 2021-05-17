@@ -135,8 +135,19 @@ namespace pair_detail {
   using has_second = decltype(T::second);
 } // namespace pair_detail.
 
+namespace range_detail {
+  template <typename T>
+  using has_min = decltype(T::min);
+
+  template <typename T>
+  using has_max = decltype(T::max);
+} // namespace range_detail.
+
 template <typename T>
 using is_pair = std::conjunction<type_exist<pair_detail::has_first, T>, type_exist<pair_detail::has_second, T>>;
+
+template <typename T>
+using is_range = std::conjunction<type_exist<range_detail::has_min, T>, type_exist<range_detail::has_max, T>>;
 
 template <typename>
 struct is_tuple : std::false_type {};

@@ -108,10 +108,13 @@ namespace detail {
     }
 
     inline constexpr size operator*(const size& size) const noexcept {
-      return size(width * size.width, height * size.height);
+      return { width * size.width, height * size.height };
     }
 
-    inline constexpr size operator*(value_type v) const noexcept { return size(width * v, height * v); }
+    template <typename T, typename = typename std::enable_if_t<std::is_arithmetic_v<T>, T>>
+    inline constexpr size operator*(T v) const noexcept {
+      return { (value_type)(width * v), (value_type)(height * v) };
+    }
 
     inline constexpr size& operator*=(const size& size) noexcept {
       width *= size.width;
@@ -126,10 +129,10 @@ namespace detail {
     }
 
     inline constexpr size operator+(const size& size) const noexcept {
-      return size(width + size.width, height + size.height);
+      return { width + size.width, height + size.height };
     }
     inline constexpr size operator-(const size& size) const noexcept {
-      return size(width - size.width, height - size.height);
+      return { width - size.width, height - size.height };
     }
 
     inline constexpr size& operator+=(const size& size) noexcept {
