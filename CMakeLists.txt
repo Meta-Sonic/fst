@@ -30,19 +30,36 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 #User options
 option(FST_BUILD_TESTS "Build and run tests." ON) 
 option(FST_BUILD_BENCH "Build and run benchmarks." OFF)
-option(FST_BUILD_DEV "Build dev." ON)
+option(FST_BUILD_DEV "Build dev." OFF)
 
 set(FST_INCLUDE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include)
+set(FST_SOURCE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(FST_EXTERN_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/extern)
 
 #All sources.
-file(GLOB_RECURSE FST_SOURCE_FILES "${FST_INCLUDE_DIRECTORY}/*.h")
+file(GLOB_RECURSE FST_HEADER_FILES "${FST_INCLUDE_DIRECTORY}/*.h")
+file(GLOB_RECURSE FST_SOURCE_FILES "${FST_SOURCE_DIRECTORY}/*.cpp")
 
 #File groups.
-make_pretty_source_folders("include/fst" "include" "${FST_SOURCE_FILES}")
+make_pretty_source_folders("include/fst" "include" "${FST_HEADER_FILES}")
+make_pretty_source_folders("src" "src" "${FST_SOURCE_FILES}")
 
-add_library(${PROJECT_NAME}  INTERFACE ${FST_SOURCE_FILES})
 
-target_include_directories(${PROJECT_NAME} INTERFACE ${FST_INCLUDE_DIRECTORY})
+add_subdirectory(${FST_EXTERN_DIRECTORY}/zlib)
+add_subdirectory(${FST_EXTERN_DIRECTORY}/libzip)
+
+add_library(${PROJECT_NAME}  STATIC ${FST_HEADER_FILES} ${FST_SOURCE_FILES})
+
+target_include_directories(${PROJECT_NAME} PUBLIC
+  ${FST_INCLUDE_DIRECTORY}
+  ${FST_EXTERN_DIRECTORY}/libzip/lib
+  ${CMAKE_BINARY_DIR}/extern/libzip/
+)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC
+  zlib
+  zip
+)
 
 #Tests
 if (${FST_BUILD_TESTS})
