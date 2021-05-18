@@ -183,7 +183,9 @@ int main(int argc, char *argv[]) { }" HAVE_NULLABLE)
 
 test_big_endian(WORDS_BIGENDIAN)
 
-find_package(ZLIB 1.1.2 REQUIRED)
+# find_package(ZLIB 1.1.2 REQUIRED PATHS ${CMAKE_CURRENT_SOURCE_DIR}/../zlib)
+
+# include(${CMAKE_CURRENT_SOURCE_DIR}/../zlib)
 
 if(ENABLE_BZIP2)
   find_package(BZip2)
@@ -300,12 +302,13 @@ endforeach()
 string(REGEX REPLACE "-lBZip2::BZip2" "-lbz2" LIBS ${LIBS})
 string(REGEX REPLACE "-lLibLZMA::LibLZMA" "-llzma" LIBS ${LIBS})
 string(REGEX REPLACE "-lOpenSSL::Crypto" "-lssl -lcrypto" LIBS ${LIBS})
-string(REGEX REPLACE "-lZLIB::ZLIB" "-lz" LIBS ${LIBS})
+# string(REGEX REPLACE "-lZLIB::ZLIB" "-lz" LIBS ${LIBS})
+string(REGEX REPLACE "-lzlib" "-lz" LIBS ${LIBS})
 string(REGEX REPLACE "-lGnuTLS::GnuTLS" "-lgnutls" LIBS ${LIBS})
 string(REGEX REPLACE "-lNettle::Nettle" "-lnettle" LIBS ${LIBS})
 configure_file(libzip.pc.in libzip.pc @ONLY)
 if(LIBZIP_DO_INSTALL)
-  install(FILES ${PROJECT_BINARY_DIR}/libzip.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+  # install(FILES ${PROJECT_BINARY_DIR}/libzip.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 endif()
 
 # fixed size integral types
@@ -430,17 +433,17 @@ configure_package_config_file("${PROJECT_NAME}-config.cmake.in" "${PROJECT_BINAR
   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libzip)
 
 # Add targets to the build-tree export set
-export(TARGETS zip
-  FILE "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-targets.cmake")
+# export(TARGETS zip
+  # FILE "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-targets.cmake")
 
 # installation
-if(LIBZIP_DO_INSTALL)
-  install(FILES ${PROJECT_BINARY_DIR}/zipconf.h DESTINATION include)
-  install(FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-    )
-  install(EXPORT ${PROJECT_NAME}-targets NAMESPACE libzip:: FILE ${PROJECT_NAME}-targets.cmake
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-    )
-endif()
+# if(LIBZIP_DO_INSTALL)
+#   install(FILES ${PROJECT_BINARY_DIR}/zipconf.h DESTINATION include)
+#   install(FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
+#     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#     )
+#   install(EXPORT ${PROJECT_NAME}-targets NAMESPACE libzip:: FILE ${PROJECT_NAME}-targets.cmake
+#     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#     )
+# endif()
 

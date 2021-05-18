@@ -113,7 +113,9 @@ add_library(zip
   zip_utf-8.c
   ${CMAKE_BINARY_DIR}/zip_err_str.c
   )
+  # add_dependencies(zip zlib)
 add_library(libzip::zip ALIAS zip)
+
 
 set_target_properties(zip PROPERTIES FOLDER fst/extern/)
 
@@ -172,7 +174,8 @@ if(SHARED_LIB_VERSIONNING)
   set_target_properties(zip PROPERTIES VERSION 5.3 SOVERSION 5)
 endif()
 
-target_link_libraries(zip PRIVATE ZLIB::ZLIB)
+# target_link_libraries(zip PRIVATE ZLIB::ZLIB)
+target_link_libraries(zip PRIVATE zlib)
 target_include_directories(zip
   PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib>

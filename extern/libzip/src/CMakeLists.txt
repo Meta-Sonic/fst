@@ -10,4 +10,7 @@ foreach(PROGRAM zipcmp zipmerge ziptool)
     target_sources(${PROGRAM} PRIVATE getopt.c)
   endif(NOT HAVE_GETOPT)
 endforeach()
-target_link_libraries(zipcmp ${FTS_LIB} ZLIB::ZLIB)
+
+add_dependencies(zipcmp zlib)
+# target_link_libraries(zipcmp ${FTS_LIB} ZLIB::ZLIB)
+target_link_libraries(zipcmp ${FTS_LIB} zlib)
