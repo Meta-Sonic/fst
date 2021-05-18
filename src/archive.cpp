@@ -2,6 +2,8 @@
 #include "zip.h"
 
 namespace fst {
+archive::~archive() { close(); }
+
 archive::error_type archive::open(const std::filesystem::path& path) {
   close();
 

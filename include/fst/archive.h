@@ -44,6 +44,21 @@ class archive {
 public:
   enum class error_type { no_error, invalid_archive, open_file_error, buffer_creation_error, open_from_source_error };
 
+  archive() = default;
+  archive(const archive& a) = delete;
+  archive(archive&& a) { *this = std::move(a); }
+
+  ~archive();
+
+  archive& operator=(const archive& a) = delete;
+  archive& operator=(archive&& a) {
+    _archive = a._archive;
+    _src = a._src;
+    a._archive = nullptr;
+    a._src = nullptr;
+    return *this;
+  }
+
   error_type open(const std::filesystem::path& path);
   error_type open(const fst::byte_view& data);
   error_type create();

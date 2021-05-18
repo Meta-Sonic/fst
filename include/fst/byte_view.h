@@ -38,6 +38,8 @@
 #include <new>
 #include <algorithm>
 #include <stdexcept>
+#include <filesystem>
+#include <fstream>
 
 namespace fst {
 template <typename _Tp = const std::uint8_t>
@@ -238,6 +240,17 @@ public:
       constexpr T div = long(1) << long(31);
       return as<std::int32_t>(__index) / div;
     }
+  }
+
+  inline bool write_to_file(const std::filesystem::path& file_path) const {
+    std::ofstream output_file(file_path, std::ios::binary);
+    if (!output_file.is_open()) {
+      return false;
+    }
+
+    output_file.write(data<char>(), size());
+    output_file.close();
+    return true;
   }
 };
 
