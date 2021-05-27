@@ -48,16 +48,16 @@ make_pretty_source_folders("src" "src" "${FST_SOURCE_FILES}")
 add_subdirectory(${FST_EXTERN_DIRECTORY}/zlib)
 add_subdirectory(${FST_EXTERN_DIRECTORY}/libzip)
 
-add_library(${PROJECT_NAME}  STATIC ${FST_HEADER_FILES} ${FST_SOURCE_FILES})
+add_library(${PROJECT_NAME} STATIC ${FST_HEADER_FILES} ${FST_SOURCE_FILES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
   ${FST_INCLUDE_DIRECTORY}
   ${FST_EXTERN_DIRECTORY}/libzip/lib
-  ${CMAKE_BINARY_DIR}/extern/libzip/
+  ${CMAKE_CURRENT_BINARY_DIR}/extern/libzip/
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
-  zlib
+  zlibstatic
   zip
 )
 

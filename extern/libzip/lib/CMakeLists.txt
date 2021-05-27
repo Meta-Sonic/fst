@@ -175,7 +175,7 @@ if(SHARED_LIB_VERSIONNING)
 endif()
 
 # target_link_libraries(zip PRIVATE ZLIB::ZLIB)
-target_link_libraries(zip PRIVATE zlib)
+target_link_libraries(zip PRIVATE zlibstatic)
 target_include_directories(zip
   PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/lib>
@@ -183,15 +183,15 @@ target_include_directories(zip
   $<INSTALL_INTERFACE:include>
   )
 
-if(LIBZIP_DO_INSTALL)
-  install(TARGETS zip
-    EXPORT ${PROJECT_NAME}-targets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
-  install(FILES zip.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-endif()
+# if(LIBZIP_DO_INSTALL)
+#   install(TARGETS zip
+#     EXPORT ${PROJECT_NAME}-targets
+#     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+#     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+#     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+#   install(FILES zip.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+# endif()
 
 # create zip_err_str.h from zip.h
 file(READ ${PROJECT_SOURCE_DIR}/lib/zip.h zip_h)

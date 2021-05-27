@@ -1,2 +1,3 @@
+// -*- C++ -*-
 #pragma once 
 #include <fst/byte_view.h>
