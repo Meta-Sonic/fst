@@ -123,6 +123,44 @@ inline constexpr std::string_view strip_leading_and_trailing_spaces(std::string_
   return strip_trailing_spaces(strip_leading_spaces(s));
 }
 
+inline constexpr std::string_view extract_number(std::string_view s) {
+  std::size_t start = std::numeric_limits<std::size_t>::max();
+  std::size_t dot = std::numeric_limits<std::size_t>::max();
+  std::size_t end = std::numeric_limits<std::size_t>::max();
+  for (std::size_t i = 0; i < s.size(); i++) {
+    if (fst::is_digit(s[i])) {
+      start = i;
+      break;
+    }
+  }
+
+  if (start == std::numeric_limits<std::size_t>::max()) {
+    return std::string_view();
+  }
+
+  for (std::size_t i = start + 1; i < s.size(); i++) {
+    if (s[i] == '.') {
+      dot = i;
+      break;
+    }
+  }
+
+  if (dot == std::numeric_limits<std::size_t>::max()) {
+    dot = start;
+  }
+
+  end = dot;
+  for (std::size_t i = dot + 1; i < s.size() && fst::is_digit(s[i]); i++) {
+    end = i;
+  }
+
+  if (start > 0 && s[start - 1] == '-') {
+    start--;
+  }
+
+  return std::string_view(s.begin() + start, end - start + 1);
+}
+
 inline constexpr bool is_signed_integer(std::string_view s) {
   if (s.empty()) {
     return false;

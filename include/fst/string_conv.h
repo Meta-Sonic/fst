@@ -37,6 +37,7 @@
 #include "fst/traits.h"
 #include "fst/span.h"
 #include "fst/print.h"
+#include "fst/string.h"
 #include "fst/util.h"
 #include "fst/verified_value.h"
 
@@ -780,14 +781,19 @@ namespace detail {
 
 template <typename T, typename _ArithmeticTag>
 inline fst::verified_value<T> to_number(std::string_view str) {
+  std::string_view num_str = fst::string::extract_number(str);
+  if (num_str.empty()) {
+    return fst::verified_value<T>::invalid();
+  }
+
   if constexpr (std::is_floating_point_v<T>) {
-    return detail::to_real<T>(str);
+    return detail::to_real<T>(num_str);
   }
   else if constexpr (std::is_signed_v<T>) {
-    return detail::to_signed_integer<T>(str);
+    return detail::to_signed_integer<T>(num_str);
   }
   else if constexpr (std::is_unsigned_v<T>) {
-    return detail::to_unsigned_integer<T>(str);
+    return detail::to_unsigned_integer<T>(num_str);
   }
   else {
     return fst::verified_value<T>::invalid();

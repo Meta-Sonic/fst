@@ -63,6 +63,23 @@ inline constexpr bool is_letter_or_underscore(char c) { return is_letter(c) || c
 
 inline constexpr bool is_alphanumeric_or_underscore(char c) { return is_alphanumeric(c) || c == '_'; }
 
+inline constexpr bool is_hex(char c) { return is_digit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }
+
+constexpr inline unsigned char hex_to_char(char c) {
+  if (is_digit(c)) {
+    return c - '0';
+  }
+
+  if (c >= 'a' && c <= 'f') {
+    return 10 + c - 'a';
+  }
+
+  if (c >= 'A' && c <= 'F') {
+    return 10 + c - 'A';
+  }
+  return 0;
+}
+
 inline constexpr bool is_control(char c) { return (c >= 0 && c <= 31) || c == 127; }
 
 inline constexpr bool is_end_of_line(char c) { return c == '\n' || c == '\r'; }
