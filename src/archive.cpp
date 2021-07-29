@@ -8,7 +8,7 @@ archive::error_type archive::open(const std::filesystem::path& path) {
   close();
 
   int err = 0;
-  _archive = zip_open((const char*)path.c_str(), ZIP_CREATE, &err);
+  _archive = zip_open(path.string().c_str(), ZIP_CREATE, &err);
 
   if (_archive == nullptr) {
     return error_type::invalid_archive;
