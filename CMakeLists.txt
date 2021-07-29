@@ -48,6 +48,12 @@ make_pretty_source_folders("src" "src" "${FST_SOURCE_FILES}")
 add_subdirectory(${FST_EXTERN_DIRECTORY}/zlib)
 add_subdirectory(${FST_EXTERN_DIRECTORY}/libzip)
 
+set_target_properties(zlib PROPERTIES FOLDER fst/extern)
+set_target_properties(zlibstatic PROPERTIES FOLDER fst/extern)
+set_target_properties(distcheck PROPERTIES FOLDER fst/extern)
+set_target_properties(dist PROPERTIES FOLDER fst/extern)
+set_target_properties(zip PROPERTIES FOLDER fst/extern)
+
 add_library(${PROJECT_NAME} STATIC ${FST_HEADER_FILES} ${FST_SOURCE_FILES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
