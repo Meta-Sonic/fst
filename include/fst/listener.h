@@ -1,7 +1,7 @@
 ///
 /// BSD 3-Clause License
 ///
-/// Copyright (c) 2020, Alexandre Arsenault
+/// Copyright (c) 2021, Alexandre Arsenault
 /// All rights reserved.
 ///
 /// Redistribution and use in source and binary forms, with or without
@@ -33,14 +33,15 @@
 
 #pragma once
 #include "fst/pointer.h"
+#include <mutex>
 #include <vector>
 
 namespace fst {
-template <typename _Listener>
+template <typename _Listener, template <class...> class _VectorType = std::vector>
 class listener_manager {
 public:
   using listener = _Listener;
-  using vector_type = std::vector<listener*>;
+  using vector_type = _VectorType<listener*>;
   using iterator = typename vector_type::iterator;
   using const_iterator = typename vector_type::const_iterator;
   using size_type = typename vector_type::size_type;
@@ -64,8 +65,8 @@ public:
     }
   }
 
-  inline std::vector<listener*>& get() { return _listeners; }
-  inline const std::vector<listener*>& get() const { return _listeners; }
+  inline vector_type& get() { return _listeners; }
+  inline const vector_type& get() const { return _listeners; }
 
   inline size_type size() const noexcept { return _listeners.size(); }
   inline bool empty() const noexcept { return _listeners.empty(); }
@@ -78,4 +79,79 @@ public:
 private:
   vector_type _listeners;
 };
+
+namespace mt {
+  template <typename _Listener, typename _Mutex = std::recursive_mutex,
+      template <class...> class _VectorType = std::vector>
+  class listener_manager {
+  public:
+    using listener = _Listener;
+    using vector_type = _VectorType<listener*>;
+    using iterator = typename vector_type::iterator;
+    using const_iterator = typename vector_type::const_iterator;
+    using size_type = typename vector_type::size_type;
+    using mutex_type = _Mutex;
+    using lock_guard_type = std::lock_guard<mutex_type>;
+
+    inline void add(fst::not_null<listener*> nl) {
+      lock_guard_type lk(_mutex);
+
+      for (listener* l : _listeners) {
+        if (l == nl) {
+          return;
+        }
+      }
+
+      _listeners.push_back(nl);
+    }
+
+    inline void remove(fst::not_null<listener*> ol) {
+      lock_guard_type lk(_mutex);
+
+      for (auto it = _listeners.begin(); it != _listeners.end(); ++it) {
+        if ((*it) == ol) {
+          _listeners.erase(it);
+          return;
+        }
+      }
+    }
+
+    inline vector_type& get() { return _listeners; }
+    inline const vector_type& get() const { return _listeners; }
+
+    inline size_type size() const noexcept { return _listeners.size(); }
+    inline bool empty() const noexcept { return _listeners.empty(); }
+    inline void lock() { _mutex.lock(); }
+    inline void unlock() { _mutex.unlock(); }
+
+    template <auto Fct, typename... Args>
+    inline void notify(Args&&... args) {
+      if (_listeners.empty()) {
+        return;
+      }
+
+      lock();
+      for (auto& l : _listeners) {
+        (l->*Fct)(std::forward<Args>(args)...);
+      }
+      unlock();
+    }
+
+    inline void clear() {
+      lock();
+      _listeners.clear();
+      unlock();
+    }
+
+    inline void reset() {
+      lock();
+      vector_type().swap(_listeners);
+      unlock();
+    }
+
+  private:
+    vector_type _listeners;
+    mutex_type _mutex;
+  };
+} // namespace mt.
 } // namespace fst.

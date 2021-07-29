@@ -126,6 +126,9 @@ template <class T>
 struct is_defined<T, std::enable_if_t<std::is_object<T>::value && !std::is_pointer<T>::value && (sizeof(T) > 0)>>
     : std::true_type {};
 
+template <typename... _InputT>
+using tuple_cat_t = decltype(std::tuple_cat(std::declval<_InputT>()...));
+
 // Pair.
 namespace pair_detail {
   template <typename T>
