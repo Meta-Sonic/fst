@@ -158,7 +158,7 @@ inline constexpr std::string_view extract_number(std::string_view s) {
     start--;
   }
 
-  return std::string_view((const char*)(s.begin() + start), (std::size_t)(end - start + 1));
+  return std::string_view(s.data() + start, end - start + 1);
 }
 
 inline constexpr bool is_signed_integer(std::string_view s) {
