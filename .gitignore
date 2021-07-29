@@ -47,8 +47,6 @@ project.xcworkspace
 *.xccheckout
 .vs
 
-cmake
-cmake/*
 cmake-xcode-release
 cmake-xcode-release/*
 cmake-xcode/*
