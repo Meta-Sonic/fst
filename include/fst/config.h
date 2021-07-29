@@ -33,6 +33,7 @@
 #pragma once
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 
 ///
 /// Macro options.
@@ -536,24 +537,26 @@ namespace fst::config {
   #define FST_BUILTIN_TRAP *(volatile int*)0x11 = 0
 #endif
 
-/// @macro FST_BUILTIN_DEBUGTRAP
+/// @macro FST_DEBUGTRAP
 /// On compilers which support it, expands to an expression which causes the program to break
 /// while running under a debugger.
 #if __has_builtin(__builtin_debugtrap)
-  #define FST_BUILTIN_DEBUGTRAP __builtin_debugtrap()
+  #define FST_DEBUGTRAP() __builtin_debugtrap()
 
 #elif __FST_MSVC__
   // The __debugbreak intrinsic is supported by MSVC and breaks while
   // running under the debugger, and also supports invoking a debugger
   // when the OS is configured appropriately.
-  #define FST_BUILTIN_DEBUGTRAP __debugbreak()
+  #define FST_DEBUGTRAP() __debugbreak()
+
+#elif __FST_CLANG__ && (defined(unix) || defined(__unix__) || defined(__unix) || defined(__MACH__))
+  #include <signal.h>
+  #define FST_DEBUGTRAP() raise(SIGTRAP)
+
 #else
-  // Just continue execution when built with compilers that have no
-  // support. This is a debugging aid and not intended to force the
-  // program to abort if encountered.
-  #define FST_BUILTIN_DEBUGTRAP
+  #define FST_DEBUGTRAP() std::abort()
 #endif
- 
+
 /// @macro FST_NOP().
 #if __FST_X86__ || __FST_X64__
   #if __FST_MSVC__

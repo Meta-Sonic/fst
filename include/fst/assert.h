@@ -34,62 +34,36 @@
 #pragma once
 #include "fst/common.h"
 #include <cassert>
-#include <cstddef>
-#include <cstdlib>
 #include <iostream>
 #include <string>
 
 // clang-format off
-#if __FST_MSVC__
-  #define __FST_DEBUG_BREAK __debugbreak()
-
-#elif __FST_CLANG__
-  #if __has_builtin(__builtin_debugtrap)
-    #define __FST_DEBUG_BREAK __builtin_debugtrap()
-  #elif defined(unix) || defined(__unix__) || defined(__unix) || defined(__MACH__)
-    #include <signal.h>
-    #define __FST_DEBUG_BREAK raise(SIGTRAP)
-  #else
-    #define __FST_DEBUG_BREAK std::abort()
-  #endif
-#else
-  #define __FST_DEBUG_BREAK std::abort()
-#endif
-
-#if defined(NDEBUG) && !defined(FST_USE_ASSERT_IN_RELEASE)
+#if __FST_RELEASE_BUILD__
+  namespace fst::config { inline constexpr bool has_assert = false; }
   #define fst_assert(Expr, Msg) ;
   #define fst_error(Msg) ;
-  #define __FST_HAS_DEBUG_ASSERT 0
-  namespace fst::config { inline constexpr bool has_assert = false; }
+
 #else
-  #define __FST_HAS_DEBUG_ASSERT 1
   namespace fst::config { inline constexpr bool has_assert = true; }
   #define fst_assert(Expr, Msg) fst::assert_detail::custom_assert(#Expr, Expr, __FILE__, __LINE__, Msg)
-  #define fst_error(Msg) fst_assert(false, Msg)
-#endif
+  #define fst_error(Msg) fst::assert_detail::custom_error(__FILE__, __LINE__, Msg)
+#endif // __FST_RELEASE_BUILD__.
 
 #define __FST_CALL_RELEASE_ASSERT fst::assert_detail::global_release_assert::call_assert
 #define fst_release_assert(Expr, Msg) __FST_CALL_RELEASE_ASSERT(#Expr, Expr, __FILE__, __LINE__, Msg)
 #undef __FST_CALL_RELEASE_ASSERT
 
-// https://akrzemi1.wordpress.com/2017/05/18/asserts-in-constexpr-functions/
-#if __FST_CLANG__ || __FST_GCC__
-  #define fst_likely(EXPR) __builtin_expect(!!(EXPR), 1)
-#else
-  #define fst_likely(EXPR) (!!(EXPR))
-#endif
-
-#ifdef NDEBUG
+#if __FST_RELEASE_BUILD__
   #define fst_cexpr_assert(CHECK) void(0)
 #else
-  #define fst_cexpr_assert(CHECK) ( fst_likely(CHECK) ?  void(0) : []{assert(!#CHECK);}() )
-#endif
+  #define fst_cexpr_assert(CHECK) (FST_LIKELY(CHECK) ? void(0) : [] { assert(!#CHECK); }())
+#endif // __FST_RELEASE_BUILD__
 
 // clang-format on
 
-  namespace fst {
-  namespace assert_detail {
-#if __FST_HAS_DEBUG_ASSERT
+namespace fst {
+namespace assert_detail {
+#if __FST_DEBUG_BUILD__
   inline void custom_assert(const char* expr_str, bool expr, const char* file, int line, const std::string& msg) {
     if (expr) {
       return;
@@ -99,9 +73,16 @@
               << "Expected:\t" << expr_str << "\n"
               << "Source:\t\t" << file << ", line " << line << "\n";
 
-    __FST_DEBUG_BREAK;
+    FST_DEBUGTRAP();
   }
-#endif // __FST_HAS_DEBUG_ASSERT
+
+  inline void custom_error(const char* file, int line, const std::string& msg) {
+    std::cerr << "Assert failed:\t" << msg << "\n"
+              << "Source:\t\t" << file << ", line " << line << "\n";
+
+    FST_DEBUGTRAP();
+  }
+#endif // __FST_DEBUG_BUILD__
 
   class global_release_assert {
   public:
@@ -139,7 +120,7 @@
       return callback;
     }
   };
-  } // namespace assert_detail.
+} // namespace assert_detail.
 
 inline void set_release_assert_callback(assert_detail::global_release_assert::callback_ptr callback) {
   assert_detail::global_release_assert::set_callback(callback);
