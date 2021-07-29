@@ -72,7 +72,7 @@ else()
   endif()
 endif()
 
-include(Dist)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Dist.cmake)
 Dist(${CMAKE_PROJECT_NAME}-${CMAKE_PROJECT_VERSION})
 
 #ADD_CUSTOM_TARGET(uninstall
