@@ -58,12 +58,14 @@
 
 #if defined(NDEBUG) && !defined(FST_USE_ASSERT_IN_RELEASE)
   #define fst_assert(Expr, Msg) ;
+  #define fst_error(Msg) ;
   #define __FST_HAS_DEBUG_ASSERT 0
   namespace fst::config { inline constexpr bool has_assert = false; }
 #else
   #define __FST_HAS_DEBUG_ASSERT 1
   namespace fst::config { inline constexpr bool has_assert = true; }
   #define fst_assert(Expr, Msg) fst::assert_detail::custom_assert(#Expr, Expr, __FILE__, __LINE__, Msg)
+  #define fst_error(Msg) fst_assert(false, Msg)
 #endif
 
 #define __FST_CALL_RELEASE_ASSERT fst::assert_detail::global_release_assert::call_assert

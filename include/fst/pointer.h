@@ -1,7 +1,7 @@
 ///
 /// BSD 3-Clause License
 ///
-/// Copyright (c) 2020, Alexandre Arsenault
+/// Copyright (c) 2021, Alexandre Arsenault
 /// All rights reserved.
 ///
 /// Redistribution and use in source and binary forms, with or without
@@ -41,20 +41,23 @@
 #include <iosfwd>
 
 namespace fst {
-//
-// not_null
-//
-// Restricts a pointer or smart pointer to only hold non-null values.
-//
-// Has zero size overhead over T.
-//
-// If T is a pointer (i.e. T == U*) then
-// - allow construction from U*
-// - disallow construction from nullptr_t
-// - disallow default construction
-// - ensure construction from null U* fails
-// - allow implicit conversion to U*
-//
+template <typename T>
+using maybe_null = T;
+
+///
+/// not_null
+///
+/// Restricts a pointer or smart pointer to only hold non-null values.
+///
+/// Has zero size overhead over T.
+///
+/// If T is a pointer (i.e. T == U*) then
+/// - allow construction from U*
+/// - disallow construction from nullptr_t
+/// - disallow default construction
+/// - ensure construction from null U* fails
+/// - allow implicit conversion to U*
+///
 template <class T>
 class not_null {
 public:

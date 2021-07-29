@@ -40,6 +40,7 @@
 #include <random>
 
 namespace fst {
+// https://github.com/mariusbancila/stduuid
 class uuid {
 public:
   using value_type = std::uint8_t;
