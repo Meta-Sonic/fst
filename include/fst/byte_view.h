@@ -40,6 +40,8 @@
 #include <stdexcept>
 #include <filesystem>
 #include <fstream>
+#include <cstring>
+
 
 namespace fst {
 template <typename _Tp = const std::uint8_t>
