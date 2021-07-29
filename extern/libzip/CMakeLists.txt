@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0.2)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-message("ASLKJSAKJLKSJA " ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
 if (${CMAKE_VERSION} VERSION_LESS "3.17.0")
   list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake-compat)
 endif()
@@ -72,6 +72,8 @@ else()
   endif()
 endif()
 
+# include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Dist.cmake)
+message("ASLKJSAKJLKSJA " ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Dist.cmake)
 Dist(${CMAKE_PROJECT_NAME}-${CMAKE_PROJECT_VERSION})
 
