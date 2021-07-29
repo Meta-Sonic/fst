@@ -289,9 +289,9 @@ namespace fst::config {
   // Linux.
   #elif defined(__linux__) || defined(__linux) || defined(linux)
     #define __FST_ANDROID__ 0
-    #define __FST_BSD__     1
+    #define __FST_BSD__     0
     #define __FST_IOS__     0
-    #define __FST_LINUX__   0
+    #define __FST_LINUX__   1
     #define __FST_MACOS__   0
     #define __FST_SOLARIS__ 0
     #define __FST_WINDOWS__ 0
