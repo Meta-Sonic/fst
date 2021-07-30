@@ -51,6 +51,9 @@ namespace detail {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wnested-anon-types"
 #pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
+#elif __FST_MSVC__
+#pragma warning(push)
+#pragma warning(disable : 4201)
 #endif
 
     union {
@@ -69,6 +72,8 @@ namespace detail {
 
 #if __FST_CLANG__
 #pragma clang diagnostic pop
+#elif __FST_MSVC__
+#pragma warning(pop)
 #endif
 
     inline constexpr rect()

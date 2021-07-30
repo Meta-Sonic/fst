@@ -17,7 +17,7 @@ public:
   fully_trivial_type& operator=(fully_trivial_type&&) = default;
 
 private:
-  int FST_ATTRIBUTE_UNUSED _data;
+  FST_ATTRIBUTE_UNUSED int _data;
 };
 
 static_assert(
@@ -47,7 +47,7 @@ public:
   trivial_type_no_move& operator=(trivial_type_no_move&&) = delete;
 
 private:
-  int FST_ATTRIBUTE_UNUSED _data;
+  FST_ATTRIBUTE_UNUSED int _data;
 };
 
 static_assert(

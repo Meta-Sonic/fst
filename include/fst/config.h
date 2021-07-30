@@ -581,6 +581,10 @@ namespace fst::config {
 // Prefer cast-to-void wherever it is sufficient.
 #if __has_attribute(unused) || FST_GNUC_PREREQ(3, 1, 0)
   #define FST_ATTRIBUTE_UNUSED __attribute__((__unused__))
+
+#elif defined(__cplusplus) && __cplusplus > 201402L && FST_HAS_CPP_ATTRIBUTE(maybe_unused)
+  #define FST_ATTRIBUTE_UNUSED [[maybe_unused]]
+
 #else
   #define FST_ATTRIBUTE_UNUSED
 #endif

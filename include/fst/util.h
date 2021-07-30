@@ -152,6 +152,18 @@ inline constexpr bool is_less(const T1& t1, const T2& t2) {
 }
 
 template <typename T1, typename T2>
+inline constexpr bool is_less_or_equal(const T1& t1, const T2& t2) {
+  using type = std::common_type_t<T1, T2>;
+  return static_cast<type>(t1) <= static_cast<type>(t2);
+}
+
+template <typename T1, typename T2>
+inline constexpr bool is_greater(const T1& t1, const T2& t2) {
+  using type = std::common_type_t<T1, T2>;
+  return static_cast<type>(t1) > static_cast<type>(t2);
+}
+
+template <typename T1, typename T2>
 inline constexpr bool is_greater_or_equal(const T1& t1, const T2& t2) {
   using type = std::common_type_t<T1, T2>;
   return static_cast<type>(t1) >= static_cast<type>(t2);
