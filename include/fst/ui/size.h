@@ -38,152 +38,136 @@
 #include <type_traits>
 
 namespace fst::ui {
-namespace detail {
-  template <typename _Tp>
-  class size {
-  public:
-    using value_type = _Tp;
-    using pair_type = std::pair<value_type, value_type>;
-    static_assert(std::is_arithmetic<value_type>::value, "value_type is not arithmetic");
+template <typename _Tp>
+class t_size {
+public:
+  using value_type = _Tp;
+  using pair_type = std::pair<value_type, value_type>;
+  static_assert(std::is_arithmetic<value_type>::value, "value_type is not arithmetic");
 
-    value_type width, height;
+  value_type width, height;
 
-    inline constexpr size(value_type W = 0, value_type H = 0) noexcept
-        : width(W)
-        , height(H) {}
+  inline constexpr t_size(value_type W = 0, value_type H = 0) noexcept
+      : width(W)
+      , height(H) {}
 
-    template <typename T>
-    inline constexpr size(const size<T>& s) noexcept
-        : width((value_type)s.width)
-        , height((value_type)s.height) {}
+  template <typename T>
+  inline constexpr t_size(const t_size<T>& s) noexcept
+      : width((value_type)s.width)
+      , height((value_type)s.height) {}
 
-    inline constexpr size(const pair_type& p) noexcept
-        : width(p.first)
-        , height(p.second) {}
+  inline constexpr t_size(const pair_type& p) noexcept
+      : width(p.first)
+      , height(p.second) {}
 
-    size(const std::string& size_str)
-        : width(-1)
-        , height(-1) {
-      // Split string.
-      std::vector<std::string> size_elem;
-      std::string r = size_str;
-      size_t pos = 0;
-      std::string token;
-      const std::string delimiter(",");
+  t_size(const std::string& size_str)
+      : width(-1)
+      , height(-1) {
+    // Split string.
+    std::vector<std::string> size_elem;
+    std::string r = size_str;
+    std::size_t pos = 0;
+    std::string token;
+    const std::string delimiter(",");
 
-      while ((pos = r.find(delimiter)) != std::string::npos) {
-        token = r.substr(0, pos);
-        size_elem.push_back(token);
-        r.erase(0, pos + delimiter.length());
-      }
-
-      size_elem.push_back(r);
-
-      if (size_elem.size() != 2) {
-        return;
-      }
-
-      width = (value_type)std::stod(size_elem[0]);
-      height = (value_type)std::stod(size_elem[1]);
+    while ((pos = r.find(delimiter)) != std::string::npos) {
+      token = r.substr(0, pos);
+      size_elem.push_back(token);
+      r.erase(0, pos + delimiter.length());
     }
 
-    inline constexpr size& operator=(const size& size) noexcept {
-      width = size.width;
-      height = size.height;
-      return *this;
+    size_elem.push_back(r);
+
+    if (size_elem.size() != 2) {
+      return;
     }
 
-    template <typename T>
-    inline constexpr size& operator=(const size<T>& size) noexcept {
-      width = (value_type)size.width;
-      height = (value_type)size.height;
-      return *this;
-    }
+    width = (value_type)std::stod(size_elem[0]);
+    height = (value_type)std::stod(size_elem[1]);
+  }
 
-    inline constexpr pair_type to_pair() const noexcept { return pair_type(width, height); }
+  inline constexpr t_size& operator=(const t_size& s) noexcept {
+    width = s.width;
+    height = s.height;
+    return *this;
+  }
 
-    template <typename P>
-    inline constexpr size<P> cast() const noexcept {
-      return size<P>((P)width, (P)height);
-    }
+  template <typename T>
+  inline constexpr t_size& operator=(const t_size<T>& s) noexcept {
+    width = (value_type)s.width;
+    height = (value_type)s.height;
+    return *this;
+  }
 
-    inline constexpr size operator*(const size& size) const noexcept {
-      return { width * size.width, height * size.height };
-    }
+  inline constexpr pair_type to_pair() const noexcept { return pair_type(width, height); }
 
-    template <typename T, typename = typename std::enable_if_t<std::is_arithmetic_v<T>, T>>
-    inline constexpr size operator*(T v) const noexcept {
-      return { (value_type)(width * v), (value_type)(height * v) };
-    }
+  template <typename P>
+  inline constexpr t_size<P> cast() const noexcept {
+    return t_size<P>((P)width, (P)height);
+  }
 
-    inline constexpr size& operator*=(const size& size) noexcept {
-      width *= size.width;
-      height *= size.height;
-      return *this;
-    }
+  inline constexpr t_size operator*(const t_size& s) const noexcept { return { width * s.width, height * s.height }; }
 
-    inline constexpr size& operator*=(value_type v) noexcept {
-      width *= v;
-      height *= v;
-      return *this;
-    }
+  template <typename T, typename = typename std::enable_if_t<std::is_arithmetic_v<T>, T>>
+  inline constexpr t_size operator*(T v) const noexcept {
+    return { (value_type)(width * v), (value_type)(height * v) };
+  }
 
-    inline constexpr size operator+(const size& size) const noexcept {
-      return { width + size.width, height + size.height };
-    }
-    inline constexpr size operator-(const size& size) const noexcept {
-      return { width - size.width, height - size.height };
-    }
+  inline constexpr t_size& operator*=(const t_size& s) noexcept {
+    width *= s.width;
+    height *= s.height;
+    return *this;
+  }
 
-    inline constexpr size& operator+=(const size& size) noexcept {
-      width += size.width;
-      height += size.height;
-      return *this;
-    }
+  inline constexpr t_size& operator*=(value_type v) noexcept {
+    width *= v;
+    height *= v;
+    return *this;
+  }
 
-    inline constexpr size& operator-=(const size& size) noexcept {
-      width -= size.width;
-      height -= size.height;
-      return *this;
-    }
+  inline constexpr t_size operator+(const t_size& s) const noexcept { return { width + s.width, height + s.height }; }
+  inline constexpr t_size operator-(const t_size& s) const noexcept { return { width - s.width, height - s.height }; }
 
-    inline constexpr size& operator-=(value_type v) noexcept {
-      width -= v;
-      height -= v;
-      return *this;
-    }
+  inline constexpr t_size& operator+=(const t_size& s) noexcept {
+    width += s.width;
+    height += s.height;
+    return *this;
+  }
 
-    inline constexpr size& operator=(value_type size) noexcept {
-      width = size;
-      height = size;
-      return *this;
-    }
+  inline constexpr t_size& operator-=(const t_size& s) noexcept {
+    width -= s.width;
+    height -= s.height;
+    return *this;
+  }
 
-    inline constexpr bool operator==(const size& size) const noexcept {
-      return (width == size.width && height == size.height);
-    }
+  inline constexpr t_size& operator-=(value_type v) noexcept {
+    width -= v;
+    height -= v;
+    return *this;
+  }
 
-    inline constexpr bool operator!=(const size& size) const noexcept {
-      return !(width == size.width && height == size.height);
-    }
-    inline constexpr bool operator<(const size& size) const noexcept { return (width < size.width && height < size.height); }
-    inline constexpr bool operator<=(const size& size) const noexcept {
-      return (width <= size.width && height <= size.height);
-    }
-    inline constexpr bool operator>(const size& size) const noexcept  { return (width > size.width && height > size.height); }
-    inline constexpr bool operator>=(const size& size) const noexcept {
-      return (width >= size.width && height >= size.height);
-    }
+  inline constexpr t_size& operator=(value_type s) noexcept {
+    width = s;
+    height = s;
+    return *this;
+  }
 
-    std::string to_string() const noexcept { return std::to_string(width) + ", " + std::to_string(height); }
+  inline constexpr bool operator==(const t_size& s) const noexcept { return (width == s.width && height == s.height); }
 
-    friend std::ostream& operator<<(std::ostream& stream, const size& size) {
-      stream << size.width << ", " << size.height;
-      return stream;
-    }
-  };
-} // namespace detail.
+  inline constexpr bool operator!=(const t_size& s) const noexcept { return !(width == s.width && height == s.height); }
+  inline constexpr bool operator<(const t_size& s) const noexcept { return (width < s.width && height < s.height); }
+  inline constexpr bool operator<=(const t_size& s) const noexcept { return (width <= s.width && height <= s.height); }
+  inline constexpr bool operator>(const t_size& s) const noexcept { return (width > s.width && height > s.height); }
+  inline constexpr bool operator>=(const t_size& s) const noexcept { return (width >= s.width && height >= s.height); }
 
-using size = detail::size<int>;
-using fsize = detail::size<float>;
+  std::string to_string() const noexcept { return std::to_string(width) + ", " + std::to_string(height); }
+
+  friend std::ostream& operator<<(std::ostream& stream, const t_size& s) {
+    stream << s.width << ", " << s.height;
+    return stream;
+  }
+};
+
+using size = t_size<int>;
+using fsize = t_size<float>;
 } // namespace fst::ui.
