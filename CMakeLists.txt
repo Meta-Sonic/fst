@@ -15,6 +15,20 @@ function(make_pretty_source_folders BASE_PATH PREFIX_PATH REQUIRED_ARG)
 	endforeach()
 endfunction()
 
+# Compile options.
+function(set_fst_compile_options REQUIRED_ARG EXPOSURE)
+	if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+		target_compile_options(${REQUIRED_ARG} ${EXPOSURE} -Wall -Wextra -Wpedantic -Wno-gnu-zero-variadic-macro-arguments)
+	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+		target_compile_options(${REQUIRED_ARG} ${EXPOSURE} -Wall -Wextra -Wpedantic)
+	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+		# using Intel C++
+	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+		target_compile_definitions(${REQUIRED_ARG} ${EXPOSURE} _SILENCE_CXX17_UNCAUGHT_EXCEPTION_DEPRECATION_WARNING)
+		target_compile_options(${REQUIRED_ARG} ${EXPOSURE} /Zc:__cplusplus /Zc:alignedNew /permissive- /W4 /utf-8 )
+	endif()
+endfunction()
+
 #Conan search paths.
 set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR} ${CMAKE_MODULE_PATH})
 set(CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR} ${CMAKE_PREFIX_PATH})
@@ -58,9 +72,7 @@ set_target_properties(dist PROPERTIES FOLDER fst/extern)
 set_target_properties(zip PROPERTIES FOLDER fst/extern)
 
 add_library(${PROJECT_NAME} STATIC ${FST_HEADER_FILES} ${FST_SOURCE_FILES})
-
-# -Wno-nullability-completeness
-target_compile_options(${PROJECT_NAME} PUBLIC -Wall -Wextra -Wpedantic)
+set_fst_compile_options(${PROJECT_NAME} PRIVATE)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
   ${FST_INCLUDE_DIRECTORY}
@@ -83,6 +95,8 @@ if (${FST_BUILD_TESTS})
 
     add_executable(${FST_TEST_NAME} ${FST_TEST_SOURCES})
 
+    set_fst_compile_options(${FST_TEST_NAME} PRIVATE)
+
     target_link_libraries(${FST_TEST_NAME} PUBLIC
         GTest::gtest
         fst
@@ -103,6 +117,7 @@ if (${FST_BUILD_BENCH})
     file(GLOB_RECURSE FST_BENCH_SOURCES "bench/*.cpp")
 
     add_executable(${FST_BENCH_NAME} ${FST_BENCH_SOURCES})
+    set_fst_compile_options(${FST_BENCH_NAME} PRIVATE)
 
     set_target_properties(${FST_BENCH_NAME} PROPERTIES
         # CXX_STANDARD 17
