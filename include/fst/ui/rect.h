@@ -32,9 +32,9 @@
 ///
 
 #pragma once
-#include "fst/ui/point.h"
-#include "fst/ui/size.h"
-#include "fst/util.h"
+#include <fst/ui/point>
+#include <fst/ui/size>
+#include <fst/util>
 
 namespace fst::ui {
 namespace detail {
@@ -46,11 +46,11 @@ namespace detail {
     using size_type = detail::size<value_type>;
     using point_type = detail::point<value_type>;
 
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wnested-anon-types"
-#pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
-#endif
+    //#if defined(__clang__)
+    //#pragma clang diagnostic push
+    //#pragma clang diagnostic ignored "-Wnested-anon-types"
+    //#pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
+    //#endif
 
     union {
       point_type position;
@@ -66,9 +66,9 @@ namespace detail {
       };
     };
 
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
+    //#if defined(__clang__)
+    //#pragma clang diagnostic pop
+    //#endif
 
     inline constexpr rect()
         : position()
