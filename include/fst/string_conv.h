@@ -245,11 +245,11 @@ namespace detail {
 #define APPEND(x, y) x##y
 #define NOARG
 #define I(n) (const int)P##n(NOARG)
-#define U(n) (const unsigned int)P##n(u)
-#define L(n) (const long)P##n(l)
-#define UL(n) (const unsigned long)P##n(ul)
-#define LL(n) (const long long)P##n(ll)
-#define ULL(n) (const unsigned long long)P##n(ull)
+#define U(n) (const unsigned int)P##n(U)
+#define L(n) (const long)P##n(L)
+#define UL(n) (const unsigned long)P##n(UL)
+#define LL(n) (const long long)P##n(LL)
+#define ULL(n) (const unsigned long long)P##n(ULL)
 #define P20(suffix) APPEND(100000000000000000000, suffix)
 #define P19(suffix) APPEND(10000000000000000000, suffix)
 #define P18(suffix) APPEND(1000000000000000000, suffix)
