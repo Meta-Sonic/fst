@@ -48,6 +48,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#include <cstdint>
 #include <iterator>
 #include <iostream>
 #include <initializer_list>
@@ -244,12 +245,12 @@ namespace detail {
 
 #define APPEND(x, y) x##y
 #define NOARG
-#define I(n) (const int)P##n(NOARG)
-#define U(n) (const unsigned int)P##n(U)
+#define I(n) (const std::int32_t) P##n(NOARG)
+#define U(n) (const std::uint32_t) P##n(U)
 #define L(n) (const long)P##n(L)
 #define UL(n) (const unsigned long)P##n(UL)
-#define LL(n) (const long long)P##n(LL)
-#define ULL(n) (const unsigned long long)P##n(ULL)
+#define LL(n) (const std::int64_t) P##n(LL)
+#define ULL(n) (const std::uint64_t) P##n(ULL)
 #define P20(suffix) APPEND(100000000000000000000, suffix)
 #define P19(suffix) APPEND(10000000000000000000, suffix)
 #define P18(suffix) APPEND(1000000000000000000, suffix)
@@ -297,44 +298,45 @@ namespace detail {
   };
 
   template <>
-  struct integer_mult_values<int> {
-    static constexpr const int values[] = { I(0), I(1), I(2), I(3), I(4), I(5), I(6), I(7), I(8), I(9) };
+  struct integer_mult_values<std::int32_t> {
+    static constexpr const std::int32_t values[] = { I(0), I(1), I(2), I(3), I(4), I(5), I(6), I(7), I(8), I(9) };
     //    static constexpr const int values[] = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000,
     //    1000000000 };
   };
 
   template <>
-  struct integer_mult_values<unsigned int> {
-    static constexpr const unsigned int values[] = { U(0), U(1), U(2), U(3), U(4), U(5), U(6), U(7), U(8), U(9) };
+  struct integer_mult_values<std::uint32_t> {
+    static constexpr const std::uint32_t values[] = { U(0), U(1), U(2), U(3), U(4), U(5), U(6), U(7), U(8), U(9) };
     //    static constexpr const unsigned int values[]
     //        = { 1u, 10u, 100u, 1000u, 10000u, 100000u, 1000000u, 10000000u, 100000000u, 1000000000u };
   };
 
-  template <>
-  struct integer_mult_values<long> {
-    static constexpr const long values[] = { L(0), L(1), L(2), L(3), L(4), L(5), L(6), L(7), L(8), L(9), L(10), L(11),
-      L(12), L(13), L(14), L(15), L(16), L(17), L(18) };
-    //    static constexpr const long values[] = { 1L, 10L, 100L, 1000L, 10000L, 100000L, 1000000L, 10000000L,
-    //    100000000L,
-    //      1000000000L, 10000000000L, 100000000000L, 1000000000000L, 10000000000000L, 100000000000000L,
-    //      1000000000000000L, 10000000000000000L, 100000000000000000L, 1000000000000000000L };
-  };
+  //  template <>
+  //  struct integer_mult_values<long> {
+  //    static constexpr const long values[] = { L(0), L(1), L(2), L(3), L(4), L(5), L(6), L(7), L(8), L(9), L(10),
+  //    L(11),
+  //      L(12), L(13), L(14), L(15), L(16), L(17), L(18) };
+  //    //    static constexpr const long values[] = { 1L, 10L, 100L, 1000L, 10000L, 100000L, 1000000L, 10000000L,
+  //    //    100000000L,
+  //    //      1000000000L, 10000000000L, 100000000000L, 1000000000000L, 10000000000000L, 100000000000000L,
+  //    //      1000000000000000L, 10000000000000000L, 100000000000000000L, 1000000000000000000L };
+  //  };
+
+  //  template <>
+  //  struct integer_mult_values<unsigned long> {
+  //    static constexpr const unsigned long values[] = { UL(0), UL(1), UL(2), UL(3), UL(4), UL(5), UL(6), UL(7), UL(8),
+  //      UL(9), UL(10), UL(11), UL(12), UL(13), UL(14), UL(15), UL(16), UL(17), UL(18), UL(19) };
+  //    //    static constexpr const unsigned long values[]
+  //    //        = { 1UL, 10UL, 100UL, 1000UL, 10000UL, 100000UL, 1000000UL, 10000000UL, 100000000UL, 1000000000UL,
+  //    //            10000000000UL, 100000000000UL, 1000000000000UL, 10000000000000UL, 100000000000000UL,
+  //    //            1000000000000000UL, 10000000000000000UL, 100000000000000000UL, 1000000000000000000UL,
+  //    //            10000000000000000000UL };
+  //  };
 
   template <>
-  struct integer_mult_values<unsigned long> {
-    static constexpr const unsigned long values[] = { UL(0), UL(1), UL(2), UL(3), UL(4), UL(5), UL(6), UL(7), UL(8),
-      UL(9), UL(10), UL(11), UL(12), UL(13), UL(14), UL(15), UL(16), UL(17), UL(18), UL(19) };
-    //    static constexpr const unsigned long values[]
-    //        = { 1UL, 10UL, 100UL, 1000UL, 10000UL, 100000UL, 1000000UL, 10000000UL, 100000000UL, 1000000000UL,
-    //            10000000000UL, 100000000000UL, 1000000000000UL, 10000000000000UL, 100000000000000UL,
-    //            1000000000000000UL, 10000000000000000UL, 100000000000000000UL, 1000000000000000000UL,
-    //            10000000000000000000UL };
-  };
-
-  template <>
-  struct integer_mult_values<long long> {
-    static constexpr const long long values[] = { LL(0), LL(1), LL(2), LL(3), LL(4), LL(5), LL(6), LL(7), LL(8), LL(9),
-      LL(10), LL(11), LL(12), LL(13), LL(14), LL(15), LL(16), LL(17), LL(18) };
+  struct integer_mult_values<std::int64_t> {
+    static constexpr const std::int64_t values[] = { LL(0), LL(1), LL(2), LL(3), LL(4), LL(5), LL(6), LL(7), LL(8),
+      LL(9), LL(10), LL(11), LL(12), LL(13), LL(14), LL(15), LL(16), LL(17), LL(18) };
     //    static constexpr const long long values[] = { 1LL, 10LL, 100LL, 1000LL, 10000LL, 100000LL, 1000000LL,
     //    10000000LL,
     //      100000000LL, 1000000000LL, 10000000000LL, 100000000000LL, 1000000000000LL, 10000000000000LL,
@@ -342,10 +344,9 @@ namespace detail {
   };
 
   template <>
-  struct integer_mult_values<unsigned long long> {
-    static constexpr const unsigned long long values[]
-        = { ULL(0), ULL(1), ULL(2), ULL(3), ULL(4), ULL(5), ULL(6), ULL(7), ULL(8), ULL(9), ULL(10), ULL(11), ULL(12),
-            ULL(13), ULL(14), ULL(15), ULL(16), ULL(17), ULL(18), ULL(19) };
+  struct integer_mult_values<std::uint64_t> {
+    static constexpr const std::uint64_t values[] = { ULL(0), ULL(1), ULL(2), ULL(3), ULL(4), ULL(5), ULL(6), ULL(7),
+      ULL(8), ULL(9), ULL(10), ULL(11), ULL(12), ULL(13), ULL(14), ULL(15), ULL(16), ULL(17), ULL(18), ULL(19) };
     //    static constexpr const unsigned long long values[] = { 1ULL, 10ULL, 100ULL, 1000ULL, 10000ULL, 100000ULL,
     //      1000000ULL, 10000000ULL, 100000000ULL, 1000000000ULL, 10000000000ULL, 100000000000ULL, 1000000000000ULL,
     //      10000000000000ULL, 100000000000000ULL, 1000000000000000ULL, 10000000000000000ULL, 100000000000000000ULL,
