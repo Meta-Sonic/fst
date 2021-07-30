@@ -469,7 +469,7 @@ int ZEXPORT gzgetc(file)
     }
 
     /* nothing there -- try gz_read() */
-    ret = gz_read(state, buf, 1);
+    ret = (int)gz_read(state, buf, 1);
     return ret < 1 ? -1 : buf[0];
 }
 
