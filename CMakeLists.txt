@@ -20,7 +20,7 @@ function(set_fst_compile_options REQUIRED_ARG EXPOSURE)
 	if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 		target_compile_options(${REQUIRED_ARG} ${EXPOSURE} -Wall -Wextra -Wpedantic -Wno-gnu-zero-variadic-macro-arguments)
 	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-		target_compile_options(${REQUIRED_ARG} ${EXPOSURE} -Wall -Wextra -Wpedantic)
+		target_compile_options(${REQUIRED_ARG} ${EXPOSURE} -Wall -Wextra -Wpedantic -Wno-ignored-qualifiers)
 	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
 		# using Intel C++
 	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
