@@ -44,6 +44,9 @@ file(GLOB_RECURSE FST_SOURCE_FILES "${FST_SOURCE_DIRECTORY}/*.cpp")
 make_pretty_source_folders("include/fst" "include" "${FST_HEADER_FILES}")
 make_pretty_source_folders("src" "src" "${FST_SOURCE_FILES}")
 
+# -Wall
+# -Wpedantic
+# -pedantic
 
 add_subdirectory(${FST_EXTERN_DIRECTORY}/zlib)
 add_subdirectory(${FST_EXTERN_DIRECTORY}/libzip)
@@ -55,6 +58,9 @@ set_target_properties(dist PROPERTIES FOLDER fst/extern)
 set_target_properties(zip PROPERTIES FOLDER fst/extern)
 
 add_library(${PROJECT_NAME} STATIC ${FST_HEADER_FILES} ${FST_SOURCE_FILES})
+
+# -Wno-nullability-completeness
+target_compile_options(${PROJECT_NAME} PUBLIC -Wall -Wextra -Wpedantic)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
   ${FST_INCLUDE_DIRECTORY}

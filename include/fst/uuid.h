@@ -36,6 +36,7 @@
 #include <fst/ascii>
 #include <fst/span>
 #include <algorithm>
+#include <array>
 #include <iostream>
 #include <random>
 

@@ -51,8 +51,8 @@ namespace system_detail {
 
     return p ? std::filesystem::path(p->pw_dir) : "";
   }
-
 } // namespace system_detail.
+
 inline std::filesystem::path get_home_directory() {
   static std::filesystem::path home_dir = system_detail::get_home_directory();
   return home_dir;
