@@ -66,59 +66,37 @@ namespace slot_map_detail {
   }
 } // namespace slot_map_detail
 
-template <class T, class Key = std::pair<unsigned, unsigned>, template <class...> class Container = std::vector>
+template <typename _IndexType, typename _GenType>
+struct slot_map_key {
+  static_assert(std::is_integral_v<_IndexType>, "_IndexType must be an integral type.");
+
+  using index_type = _IndexType;
+  using generation_type = _GenType;
+  index_type idx;
+  generation_type gen;
+
+  template <typename T, typename std::enable_if<std::is_convertible_v<T, index_type>>::type* = nullptr>
+  inline void set_index(T i) {
+    idx = static_cast<index_type>(i);
+  }
+
+  inline void set_generation(generation_type g) { gen = g; }
+  inline index_type get_index() const { return idx; }
+  inline generation_type get_generation() const { return gen; }
+
+  inline void increment_generation() { ++gen; }
+};
+
+template <class T, class Key = slot_map_key<unsigned int, unsigned int>,
+    template <class...> class Container = std::vector>
 class slot_map {
-#if __cplusplus >= 201703L
-  static constexpr auto get_index(const Key& k) {
-    const auto& [idx, gen] = k;
-    return idx;
-  }
-
-  static constexpr auto get_generation(const Key& k) {
-    const auto& [idx, gen] = k;
-    return gen;
-  }
-
-  template <class Integral>
-  static constexpr void set_index(Key& k, Integral value) {
-    auto& [idx, gen] = k;
-    idx = static_cast<key_index_type>(value);
-  }
-
-  static constexpr void increment_generation(Key& k) {
-    auto& [idx, gen] = k;
-    ++gen;
-  }
-#else
-  static constexpr auto get_index(const Key& k) {
-    using std::get;
-    return get<0>(k);
-  }
-
-  static constexpr auto get_generation(const Key& k) {
-    using std::get;
-    return get<1>(k);
-  }
-
-  template <class Integral>
-  static constexpr void set_index(Key& k, Integral value) {
-    using std::get;
-    get<0>(k) = static_cast<key_index_type>(value);
-  }
-
-  static constexpr void increment_generation(Key& k) {
-    using std::get;
-    ++get<1>(k);
-  }
-#endif
-
   using slot_iterator = typename Container<Key>::iterator;
 
 public:
   using key_type = Key;
   using mapped_type = T;
-  using key_index_type = decltype(slot_map::get_index(std::declval<Key>()));
-  using key_generation_type = decltype(slot_map::get_generation(std::declval<Key>()));
+  using key_index_type = typename key_type::index_type;
+  using key_generation_type = typename key_type::generation_type;
   using container_type = Container<mapped_type>;
   using reference = typename container_type::reference;
   using const_reference = typename container_type::const_reference;
@@ -145,16 +123,16 @@ public:
   // O(1) time and space complexity.
   //
   constexpr reference at(const key_type& key) {
-    auto value_iter = this->find(key);
-    if (value_iter == this->end()) {
+    auto value_iter = find(key);
+    if (value_iter == end()) {
       FST_SLOT_MAP_THROW_OUT_OF_RANGE_EXCEPTION();
     }
     return *value_iter;
   }
 
   constexpr const_reference at(const key_type& key) const {
-    auto value_iter = this->find(key);
-    if (value_iter == this->end()) {
+    auto value_iter = find(key);
+    if (value_iter == end()) {
       FST_SLOT_MAP_THROW_OUT_OF_RANGE_EXCEPTION();
     }
     return *value_iter;
@@ -172,50 +150,47 @@ public:
   // O(1) time and space complexity.
   //
   constexpr iterator find(const key_type& key) {
-    auto slot_index = get_index(key);
+    auto slot_index = key.get_index();
     if (slot_index >= slots_.size()) {
       return end();
     }
 
     auto slot_iter = std::next(slots_.begin(), slot_index);
-    if (get_generation(*slot_iter) != get_generation(key)) {
+    if (slot_iter->get_generation() != key.get_generation()) {
       return end();
     }
 
-    auto value_iter = std::next(values_.begin(), get_index(*slot_iter));
-    return value_iter;
+    return std::next(values_.begin(), slot_iter->get_index());
   }
 
   constexpr const_iterator find(const key_type& key) const {
-    auto slot_index = get_index(key);
+    auto slot_index = key.get_index();
     if (slot_index >= slots_.size()) {
       return end();
     }
 
     auto slot_iter = std::next(slots_.begin(), slot_index);
-    if (get_generation(*slot_iter) != get_generation(key)) {
+    if (slot_iter->get_generation() != key.get_generation()) {
       return end();
     }
 
-    auto value_iter = std::next(values_.begin(), get_index(*slot_iter));
-    return value_iter;
+    return std::next(values_.begin(), slot_iter->get_index());
   }
 
   // The find_unchecked() functions perform no checks of any kind.
   // O(1) time and space complexity.
   //
   constexpr iterator find_unchecked(const key_type& key) {
-    auto slot_iter = std::next(slots_.begin(), get_index(key));
-    auto value_iter = std::next(values_.begin(), get_index(*slot_iter));
-    return value_iter;
+    auto slot_iter = std::next(slots_.begin(), key.get_index());
+    return std::next(values_.begin(), slot_iter->get_index());
   }
 
   constexpr const_iterator find_unchecked(const key_type& key) const {
-    auto slot_iter = std::next(slots_.begin(), get_index(key));
-    auto value_iter = std::next(values_.begin(), get_index(*slot_iter));
-    return value_iter;
+    auto slot_iter = std::next(slots_.begin(), key.get_index());
+    return std::next(values_.begin(), slot_iter->get_index());
   }
 
+  //
   // All begin() and end() variations have O(1) time and space complexity.
   //
   constexpr iterator begin() { return values_.begin(); }
@@ -280,8 +255,8 @@ public:
   // When size() == capacity() an allocation is required
   // which has O(n) time and space complexity.
   //
-  constexpr key_type insert(const mapped_type& value) { return this->emplace(value); }
-  constexpr key_type insert(mapped_type&& value) { return this->emplace(std::move(value)); }
+  constexpr key_type insert(const mapped_type& value) { return emplace(value); }
+  constexpr key_type insert(mapped_type&& value) { return emplace(std::move(value)); }
 
   template <class... Args>
   constexpr key_type emplace(Args&&... args) {
@@ -292,7 +267,9 @@ public:
     if (next_available_slot_index_ == slots_.size()) {
       auto idx = next_available_slot_index_;
       ++idx;
-      slots_.emplace_back(key_type{ idx, key_generation_type{} }); // make a new slot
+
+      // Make a new slot.
+      slots_.emplace_back(key_type{ idx, key_generation_type{} });
       last_available_slot_index_ = idx;
     }
 
@@ -302,55 +279,50 @@ public:
       last_available_slot_index_ = next_available_slot_index_;
     }
     else {
-      next_available_slot_index_ = this->get_index(*slot_iter);
+      next_available_slot_index_ = slot_iter->get_index();
     }
 
-    this->set_index(*slot_iter, value_pos);
+    slot_iter->set_index(value_pos);
     key_type result = *slot_iter;
-    this->set_index(result, std::distance(slots_.begin(), slot_iter));
+    result.set_index(std::distance(slots_.begin(), slot_iter));
     return result;
   }
 
+  //
   // Each erase() version has an O(1) time complexity per value
   // and O(1) space complexity.
   //
-  constexpr iterator erase(iterator pos) { return this->erase(const_iterator(pos)); }
+  constexpr iterator erase(iterator pos) { return erase(const_iterator(pos)); }
 
-  constexpr iterator erase(iterator first, iterator last) {
-    return this->erase(const_iterator(first), const_iterator(last));
-  }
+  constexpr iterator erase(iterator first, iterator last) { return erase(const_iterator(first), const_iterator(last)); }
 
-  constexpr iterator erase(const_iterator pos) {
-    auto slot_iter = this->slot_iter_from_value_iter(pos);
-    return erase_slot_iter(slot_iter);
-  }
+  constexpr iterator erase(const_iterator pos) { return erase_slot_iter(slot_iter_from_value_iter(pos)); }
 
   constexpr iterator erase(const_iterator first, const_iterator last) {
-    // Must use indexes, not iterators, because Container iterators might be invalidated by pop_back
-    auto first_index = std::distance(this->cbegin(), first);
-    auto last_index = std::distance(this->cbegin(), last);
+    // Must use indexes, not iterators, because Container iterators might be invalidated by pop_back.
+    auto first_index = std::distance(cbegin(), first);
+    auto last_index = std::distance(cbegin(), last);
+
     while (last_index != first_index) {
       --last_index;
-      auto iter = std::next(this->cbegin(), last_index);
-      this->erase(iter);
+      erase(std::next(cbegin(), last_index));
     }
-    return std::next(this->begin(), first_index);
+    return std::next(begin(), first_index);
   }
 
   constexpr size_type erase(const key_type& key) {
-    auto iter = this->find(key);
-    if (iter == this->end()) {
+    auto iter = find(key);
+    if (iter == end()) {
       return 0;
     }
-    this->erase(iter);
+    erase(iter);
     return 1;
   }
 
-  // clear() has O(n) time complexity and O(1) space complexity.
-  // It also has semantics differing from erase(begin(), end())
-  // in that it also resets the generation counter of every slot
-  // and rebuilds the free list.
-  //
+  /// clear() has O(n) time complexity and O(1) space complexity.
+  /// It also has semantics differing from erase(begin(), end())
+  /// in that it also resets the generation counter of every slot
+  /// and rebuilds the free list.
   constexpr void clear() {
     // This resets the generation counters, which "undefined-behavior-izes" at() and find() for the old keys.
     slots_.clear();
@@ -360,19 +332,18 @@ public:
     last_available_slot_index_ = key_index_type{};
   }
 
-  // swap is not mentioned in P0661r1 but it should be.
+  /// swap is not mentioned in P0661r1 but it should be.
   constexpr void swap(slot_map& rhs) {
-    using std::swap;
-    swap(slots_, rhs.slots_);
-    swap(values_, rhs.values_);
-    swap(reverse_map_, rhs.reverse_map_);
-    swap(next_available_slot_index_, rhs.next_available_slot_index_);
-    swap(last_available_slot_index_, rhs.last_available_slot_index_);
+    std::swap(slots_, rhs.slots_);
+    std::swap(values_, rhs.values_);
+    std::swap(reverse_map_, rhs.reverse_map_);
+    std::swap(next_available_slot_index_, rhs.next_available_slot_index_);
+    std::swap(last_available_slot_index_, rhs.last_available_slot_index_);
   }
 
 protected:
-  // These accessors are not part of P0661R2 but are "modernized" versions
-  // of the protected interface of std::priority_queue, std::stack, etc.
+  /// These accessors are not part of P0661R2 but are "modernized" versions
+  /// of the protected interface of std::priority_queue, std::stack, etc.
   constexpr Container<mapped_type>& c() & noexcept { return values_; }
   constexpr const Container<mapped_type>& c() const& noexcept { return values_; }
   constexpr Container<mapped_type>&& c() && noexcept { return std::move(values_); }
@@ -387,14 +358,14 @@ private:
 
   constexpr iterator erase_slot_iter(slot_iterator slot_iter) {
     auto slot_index = std::distance(slots_.begin(), slot_iter);
-    auto value_index = get_index(*slot_iter);
+    auto value_index = slot_iter->get_index();
     auto value_iter = std::next(values_.begin(), value_index);
     auto value_back_iter = std::prev(values_.end());
 
     if (value_iter != value_back_iter) {
       auto slot_back_iter = slot_iter_from_value_iter(value_back_iter);
       *value_iter = std::move(*value_back_iter);
-      this->set_index(*slot_back_iter, value_index);
+      slot_back_iter->set_index(value_index);
       auto reverse_map_iter = std::next(reverse_map_.begin(), value_index);
       *reverse_map_iter = static_cast<key_index_type>(std::distance(slots_.begin(), slot_back_iter));
     }
@@ -409,17 +380,23 @@ private:
     }
     else {
       auto last_slot_iter = std::next(slots_.begin(), last_available_slot_index_);
-      this->set_index(*last_slot_iter, slot_index);
+      last_slot_iter->set_index(slot_index);
       last_available_slot_index_ = static_cast<key_index_type>(slot_index);
     }
 
-    this->increment_generation(*slot_iter);
+    slot_iter->increment_generation();
     return std::next(values_.begin(), value_index);
   }
 
-  Container<key_type> slots_; // high_water_mark() entries
-  Container<key_index_type> reverse_map_; // exactly size() entries
-  Container<mapped_type> values_; // exactly size() entries
+  // high_water_mark() entries.
+  Container<key_type> slots_;
+
+  // exactly size() entries.
+  Container<key_index_type> reverse_map_;
+
+  // exactly size() entries.
+  Container<mapped_type> values_;
+
   key_index_type next_available_slot_index_{};
   key_index_type last_available_slot_index_{};
 
