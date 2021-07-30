@@ -32,6 +32,7 @@
 ///
 
 #pragma once
+#include <fst/assert>
 #include <fst/ascii>
 #include <fst/span>
 #include <algorithm>
@@ -56,7 +57,14 @@ public:
       : _data(data)
       , _is_valid(true) {}
 
-  explicit uuid(fst::span<value_type, 16> bytes) noexcept {
+  explicit uuid(fst::span<value_type> bytes) noexcept {
+    fst_assert(bytes.size() == 16, "bytes size must be 16.");
+    if (bytes.size() != 16) {
+      _is_valid = false;
+      _data.fill(0);
+      return;
+    }
+
     std::copy(std::cbegin(bytes), std::cend(bytes), std::begin(_data));
     _is_valid = true;
   }
