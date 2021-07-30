@@ -8,6 +8,11 @@
 #include <stdexcept>
 #endif // __FST_HAS_EXCEPTIONS__
 
+#if __FST_MSVC__
+#pragma warning(push)
+#pragma warning(disable : 4324)
+#endif
+
 namespace fst {
 FST_ATTRIBUTE_RETURNS_NONNULL inline void* safe_malloc(size_t Sz) {
   void* result = std::malloc(Sz);
@@ -170,4 +175,8 @@ static_assert(sizeof(sv_detail::small_vector_size_type<char>) == sizeof(uint64_t
 #else
 static_assert(sizeof(sv_detail::small_vector_size_type<char>) == sizeof(uint32_t),
     "Expected small_vector_base<uint32_t> variant to be in use.");
+#endif
+
+#if __FST_MSVC__
+#pragma warning(pop)
 #endif

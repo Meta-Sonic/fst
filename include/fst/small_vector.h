@@ -31,6 +31,7 @@
 /// POSSIBILITY OF SUCH DAMAGE.
 ///
 /// https://llvm.org/doxygen/SmallVector_8h_source.html
+
 #pragma once
 #include <fst/config>
 #include <fst/iterator_range>
@@ -47,6 +48,12 @@
 #include <new>
 #include <type_traits>
 #include <utility>
+
+#if __FST_MSVC__
+#pragma warning(push)
+// Remove 'struct_name' : structure was padded due to __declspec(align()).
+#pragma warning(disable : 4324)
+#endif
 
 namespace fst {
 template <typename T, unsigned N>
@@ -1262,3 +1269,7 @@ inline void swap(fst::small_vector<T, N>& LHS, fst::small_vector<T, N>& RHS) {
 }
 
 } // end namespace std
+
+#if __FST_MSVC__
+#pragma warning(pop)
+#endif
