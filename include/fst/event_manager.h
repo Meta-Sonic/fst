@@ -32,11 +32,11 @@
 ///
 
 #pragma once
-#include "fst/spin_lock.h"
-#include "fst/fixed_unordered_set.h"
-#include "fst/fixed_vector.h"
-#include "fst/pointer.h"
-#include "fst/traits.h"
+#include <fst/spin_lock>
+#include <fst/fixed_unordered_set>
+#include <fst/fixed_vector>
+#include <fst/pointer>
+#include <fst/traits>
 
 #include <atomic>
 #include <chrono>

@@ -32,9 +32,9 @@
 ///
 
 #pragma once
-#include "fst/assert.h"
-#include "fst/traits.h"
-#include "fst/meta.h"
+#include <fst/assert>
+#include <fst/traits>
+#include <fst/meta>
 #include <array>
 #include <exception>
 #include <initializer_list>

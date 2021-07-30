@@ -32,8 +32,8 @@
 ///
 
 #pragma once
-#include "fst/assert.h"
-#include "fst/traits.h"
+#include <fst/assert>
+#include <fst/traits>
 
 #include <iostream>
 #include <cstdint>

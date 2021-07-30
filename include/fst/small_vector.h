@@ -32,8 +32,8 @@
 ///
 /// https://llvm.org/doxygen/SmallVector_8h_source.html
 #pragma once
-#include "fst/config.h"
-#include "fst/iterator_range.h"
+#include <fst/config>
+#include <fst/iterator_range>
 #include <algorithm>
 #include <cassert>
 #include <cstddef>

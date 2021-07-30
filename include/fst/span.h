@@ -1,6 +1,6 @@
 #pragma once
 
-#include "fst/common.h"
+#include <fst/config>
 
 #ifdef __cpp_lib_span
 #define __FST_HAS_STD_SPAN__ __cpp_lib_span
@@ -27,8 +27,8 @@ http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/n4820.pdf
 //    (See accompanying file ../../LICENSE_1_0.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#include "fst/traits.h"
-#include "fst/iterator.h"
+#include <fst/traits>
+#include <fst/iterator>
 #include <array>
 #include <cstddef>
 #include <cstdint>

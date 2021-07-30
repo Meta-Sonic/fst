@@ -35,7 +35,7 @@
 #include <cmath>
 #include <limits>
 #include <type_traits>
-#include "fst/util.h"
+#include <fst/util>
 
 namespace fst::math {
 // clang-format off

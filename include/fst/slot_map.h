@@ -33,10 +33,10 @@
 /// https://github.com/WG21-SG14/SG14/blob/master/SG14/slot_map.h
 ///
 #pragma once
+#include <fst/assert>
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include "fst/assert.h"
 
 #if __FST_HAS_EXCEPTIONS__
 #include <stdexcept>

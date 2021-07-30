@@ -32,9 +32,9 @@
 ///
 
 #pragma once
+#include <fst/assert>
 #include <memory>
 #include <type_traits>
-#include "fst/assert.h"
 
 namespace fst {
 template <typename _Tp>

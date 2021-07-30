@@ -33,10 +33,10 @@
 /// https://github.com/WG21-SG14/SG14/blob/master/SG14/inplace_function.h
 ///
 #pragma once
+#include <fst/assert>
 #include <type_traits>
 #include <utility>
 #include <functional>
-#include "fst/assert.h"
 
 #if __FST_HAS_EXCEPTIONS__
 #define FST_INPLACE_FUNCTION_THROW() throw(std::bad_function_call())

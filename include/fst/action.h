@@ -1,5 +1,5 @@
 #pragma once
-#include "fst/inplace_function.h"
+#include <fst/inplace_function>
 #include <atomic>
 #include <thread>
 #include <mutex>

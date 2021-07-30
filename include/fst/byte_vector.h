@@ -32,13 +32,9 @@
 ///
 
 #pragma once
-#include "fst/assert.h"
-#include "fst/traits.h"
-#include "fst/mapped_file.h"
-
-/// IF DEBUG
-#include "fst/print.h"
-
+#include <fst/assert>
+#include <fst/traits>
+#include <fst/mapped_file>
 #include <algorithm>
 #include <vector>
 #include <iterator>
@@ -471,7 +467,6 @@ namespace byte_vector_detail {
         }
 
         byte_vector bv;
-        fst::print("FSLKJFKL", fb.content().size());
         bv.push_back(fb.content());
         fb.close();
         return bv;

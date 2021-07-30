@@ -32,7 +32,7 @@
 ///
 
 #pragma once
-#include "fst/common.h"
+#include <fst/config>
 
 // clang-format off
 #if __FST_UNISTD__

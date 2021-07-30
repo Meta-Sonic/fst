@@ -32,8 +32,8 @@
 ///
 
 #pragma once
-#include "fst/assert.h"
-#include "fst/span.h"
+#include <fst/assert>
+#include <fst/span>
 #include <cstddef>
 #include <new>
 #include <algorithm>

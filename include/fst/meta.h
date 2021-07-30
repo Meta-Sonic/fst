@@ -32,8 +32,8 @@
 ///
 
 #pragma once
-#include "fst/common.h"
-#include "fst/traits.h"
+#include <fst/config>
+#include <fst/traits>
 
 namespace fst {
 template <class T>

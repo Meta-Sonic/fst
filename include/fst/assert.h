@@ -32,7 +32,7 @@
 ///
 
 #pragma once
-#include "fst/common.h"
+#include <fst/config>
 #include <cassert>
 #include <iostream>
 #include <string>

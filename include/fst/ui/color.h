@@ -33,8 +33,8 @@
 
 #pragma once
 #include <cstdint>
-#include "fst/util.h"
-#include "fst/math.h"
+#include <fst/util>
+#include <fst/math>
 
 namespace fst::ui {
 class color {

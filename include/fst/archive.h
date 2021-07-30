@@ -32,9 +32,8 @@
 ///
 
 #pragma once
-#include "fst/byte_view.h"
-#include "fst/byte_vector.h"
-#include "fst/print.h"
+#include <fst/byte_view>
+#include <fst/byte_vector>
 
 struct zip;
 struct zip_source;

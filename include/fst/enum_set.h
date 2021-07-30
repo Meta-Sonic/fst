@@ -32,9 +32,9 @@
 ///
 
 #pragma once
-#include "fst/assert.h"
-#include "fst/unordered_array.h"
-#include "fst/enum_array.h"
+#include <fst/assert>
+#include <fst/unordered_array>
+#include <fst/enum_array>
 
 namespace fst {
 template <class Enum, std::size_t _Size = std::size_t(Enum::count)>

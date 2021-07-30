@@ -32,17 +32,16 @@
 ///
 
 #pragma once
-#include "fst/assert.h"
-#include "fst/ascii.h"
-#include "fst/traits.h"
-#include "fst/span.h"
-#include "fst/print.h"
-#include "fst/string.h"
-#include "fst/util.h"
-#include "fst/verified_value.h"
-
-#include "fst/unmanaged_string.h"
-#include "fst/detail/dragonbox/dragonbox.h"
+#include <fst/assert>
+#include <fst/ascii>
+#include <fst/traits>
+#include <fst/span>
+#include <fst/print>
+#include <fst/string>
+#include <fst/util>
+#include <fst/verified_value>
+#include <fst/unmanaged_string>
+#include <fst/detail/dragonbox/dragonbox.h>
 
 #include <algorithm>
 #include <array>

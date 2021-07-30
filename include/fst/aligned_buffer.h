@@ -32,10 +32,9 @@
 ///
 
 #pragma once
-#include "fst/assert.h"
-#include "fst/traits.h"
-#include "fst/math.h"
-
+#include <fst/assert>
+#include <fst/traits>
+#include <fst/math>
 #include <cstddef>
 #include <cstdlib>
 #include <memory>

@@ -32,10 +32,10 @@
 ///
 
 #pragma once
-#include "fst/assert.h"
-#include "fst/spin_lock.h"
-#include "fst/unordered_array.h"
-#include "fst/enum_array.h"
+#include <fst/assert>
+#include <fst/spin_lock>
+#include <fst/unordered_array>
+#include <fst/enum_array>
 #include <array>
 #include <atomic>
 #include <initializer_list>

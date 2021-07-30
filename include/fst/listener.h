@@ -32,7 +32,7 @@
 ///
 
 #pragma once
-#include "fst/pointer.h"
+#include <fst/pointer>
 #include <mutex>
 #include <vector>
 

@@ -32,8 +32,8 @@
 ///
 
 #pragma once
-#include "fst/traits.h"
-#include "fst/range.h"
+#include <fst/traits>
+#include <fst/range>
 #include <iostream>
 #include <iomanip>
 #include <ctime>

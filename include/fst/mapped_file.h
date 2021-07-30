@@ -38,10 +38,9 @@
 #include <cstdlib>
 #include <cstdio>
 
-#include "fst/common.h"
-#include "fst/assert.h"
-#include "fst/print.h"
-#include "fst/span.h"
+#include <fst/assert>
+#include <fst/print>
+#include <fst/span>
 
 // clang-format off
 #if __FST_WINDOWS__
@@ -140,11 +139,9 @@ public:
   }
 
   bool open(const std::filesystem::path& file_path) {
-    //    fst::print("mapped_file : Before close");
     if (_data) {
       close();
     }
-    //    fst::print("mapped_file : After close");
 
 #if __FST_MAPPED_FILE_USE_WINDOWS_MEMORY_MAP
     std::filesystem::path w_path = file_path;
@@ -154,30 +151,28 @@ public:
         (LPCWSTR)w_path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING,
         FILE_ATTRIBUTE_NORMAL, nullptr);
     if (hFile == INVALID_HANDLE_VALUE) {
-      fst::print("mapped_file : CreateFileA -> INVALID_HANDLE_VALUE");
+      fst::errprint("mapped_file : CreateFileA -> INVALID_HANDLE_VALUE");
       return false;
     }
 
     DWORD size = GetFileSize(hFile, nullptr);
     if (size == INVALID_FILE_SIZE || size == 0) {
-      fst::print("mapped_file : CreateFileA -> INVALID_FILE_SIZE");
+      fst::errprint("mapped_file : CreateFileA -> INVALID_FILE_SIZE");
       CloseHandle(hFile);
       return false;
     }
 
     HANDLE hMap = CreateFileMappingA(hFile, nullptr, PAGE_READONLY, 0, size, nullptr);
     if (!hMap) {
-      fst::print("mapped_file : CreateFileMappingA -> nulll");
+      fst::errprint("mapped_file : CreateFileMappingA -> nulll");
       CloseHandle(hFile);
       return false;
     }
 
     pointer data = (pointer)MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, size);
-    //    fst::print("mapped_file : MapViewOfFile", data == nullptr);
 
     // We can call CloseHandle here, but it will not be closed until we unmap the view.
     CloseHandle(hMap);
-    //    fst::print("mapped_file: ", data, size);
     _data = data;
     _size = (size_type)size;
     return true;

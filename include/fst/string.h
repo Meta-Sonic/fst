@@ -32,7 +32,7 @@
 ///
 
 #pragma once
-#include "fst/ascii.h"
+#include <fst/ascii>
 #include <string_view>
 
 namespace fst::string {

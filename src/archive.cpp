@@ -1,5 +1,6 @@
-#include "fst/archive.h"
+#include <fst/archive>
 #include "zip.h"
+#include <fst/print>
 
 namespace fst {
 archive::~archive() { close(); }

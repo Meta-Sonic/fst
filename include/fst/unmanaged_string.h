@@ -32,12 +32,12 @@
 ///
 
 #pragma once
-#include "fst/ascii.h"
-#include "fst/assert.h"
-#include "fst/traits.h"
-#include "fst/span.h"
-#include "fst/util.h"
-#include "fst/verified_value.h"
+#include <fst/ascii>
+#include <fst/assert>
+#include <fst/traits>
+#include <fst/span>
+#include <fst/util>
+#include <fst/verified_value>
 //#include "fst/string_conv.h"
 #include <algorithm>
 #include <array>
