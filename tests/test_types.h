@@ -1,7 +1,7 @@
 #pragma once
 
 #include <type_traits>
-#include "fst/traits.h"
+#include <fst/traits>
 
 namespace test {
 //
@@ -17,7 +17,7 @@ public:
   fully_trivial_type& operator=(fully_trivial_type&&) = default;
 
 private:
-  int _data;
+  int FST_ATTRIBUTE_UNUSED _data;
 };
 
 static_assert(
@@ -47,7 +47,7 @@ public:
   trivial_type_no_move& operator=(trivial_type_no_move&&) = delete;
 
 private:
-  int _data;
+  int FST_ATTRIBUTE_UNUSED _data;
 };
 
 static_assert(

@@ -34,6 +34,7 @@
 #pragma once
 #include <fst/assert>
 #include <fst/span>
+#include <fst/util>
 #include <algorithm>
 #include <vector>
 
@@ -67,7 +68,7 @@ public:
   }
 
   inline void insert(value_type value) {
-    fst_assert(value < _maximum_size, "unordered_set::insert Out of bound value.");
+    fst_assert(fst::is_less(value, _maximum_size), "unordered_set::insert Out of bound value.");
     if (_is_in_content[value]) {
       return;
     }
@@ -78,7 +79,7 @@ public:
   }
 
   void erase(value_type value) {
-    fst_assert(value < _maximum_size, "unordered_set::erase Out of bound value.");
+    fst_assert(fst::is_less(value, _maximum_size), "unordered_set::erase Out of bound value.");
     if (!_is_in_content[value]) {
       return;
     }
@@ -103,7 +104,7 @@ public:
   }
 
   inline bool contains(value_type value) const noexcept {
-    fst_assert(value < _maximum_size, "unordered_set::contains Out of bound value.");
+    fst_assert(fst::is_less(value, _maximum_size), "unordered_set::contains Out of bound value.");
     return _is_in_content[value];
   }
 

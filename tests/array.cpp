@@ -11,7 +11,7 @@ TEST(array, constructor) {
   EXPECT_EQ(a[1], 1);
   EXPECT_EQ(a[2], 2);
 
-  std::array<float, 3> c = { 6, 7, 8 };
+  //  std::array<float, 3> c = { 6, 7, 8 };
   //  a = c;
 
   b = a;

@@ -145,6 +145,18 @@ template <typename T, typename P>
   return true;
 }
 
+template <typename T1, typename T2>
+inline constexpr bool is_less(const T1& t1, const T2& t2) {
+  using type = std::common_type_t<T1, T2>;
+  return static_cast<type>(t1) < static_cast<type>(t2);
+}
+
+template <typename T1, typename T2>
+inline constexpr bool is_greater_or_equal(const T1& t1, const T2& t2) {
+  using type = std::common_type_t<T1, T2>;
+  return static_cast<type>(t1) >= static_cast<type>(t2);
+}
+
 template <typename T, typename... Args>
 inline constexpr std::array<T, sizeof...(Args)> make_array(Args&&... args) {
   return std::array<T, sizeof...(Args)>{ std::forward<Args>(args)... };

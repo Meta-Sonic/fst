@@ -587,7 +587,7 @@ namespace detail {
 
     static constexpr std::size_t max_size
         = sizeof(integer_mult_values<unsigned long long>::values) / sizeof(unsigned long long);
-    for (unsigned long long mul = 10; val >= mul && size < max_size; mul *= 10) {
+    for (unsigned long long mul = 10; val >= mul && fst::is_less(size, max_size); mul *= 10) {
       size++;
     }
 
@@ -702,7 +702,7 @@ namespace detail {
     }
     else {
       int exp = -dec.exponent;
-      if (exp >= str.size()) {
+      if (fst::is_greater_or_equal(exp, str.size())) {
         std::size_t s_size = str.size();
         u_str.insert(0, "0.");
         u_str.insert(2, exp - s_size, '0');
@@ -755,7 +755,7 @@ namespace detail {
       else {
         int exp = -dec.exponent;
 
-        if (exp >= str.size()) {
+        if (fst::is_greater_or_equal(exp, str.size())) {
           std::size_t s_size = str.size();
           u_str.insert(0, "0.");
           u_str.insert(2, exp - s_size, '0');
@@ -764,7 +764,7 @@ namespace detail {
           u_str.insert(str.size() - exp, 1, '.');
         }
 
-        if (exp < _Precision) {
+        if (fst::is_less(exp, _Precision)) {
           u_str.append(_Precision - exp, '0');
         }
       }

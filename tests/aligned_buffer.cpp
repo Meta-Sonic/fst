@@ -28,7 +28,7 @@ public:
   trivial_type& operator=(trivial_type&&) = default;
 
 private:
-  float _data;
+  float FST_ATTRIBUTE_UNUSED _data;
 };
 
 // is_trivially_destructible_v
@@ -100,7 +100,7 @@ TEST(aligned_buffer, stack_alignement) {
   //  fst::print("DSLKDJSKLJDSLK", ((std::size_t)&buffer[1]) - ((std::size_t)&buffer[0]));
 }
 
-TEST(aligned_buffer, buffer) { fst::buffer<float, 32, false> a; }
+TEST(aligned_buffer, buffer) { fst::buffer<float, 32, false> FST_ATTRIBUTE_UNUSED a; }
 
 class banana {
 public:
@@ -109,8 +109,8 @@ public:
   banana(banana&&) = delete;
 
 private:
-  char _;
-  float _a, _b, _c;
+  char FST_ATTRIBUTE_UNUSED _;
+  float FST_ATTRIBUTE_UNUSED _a, _b, _c;
 };
 
 TEST(aligned_buffer, alignment2) {
@@ -167,13 +167,13 @@ TEST(aligned_buffer, constructor) {
   EXPECT_EQ(a[1], 2.0f);
   EXPECT_EQ(b[0], 1.0f);
   EXPECT_EQ(b[1], 2.0f);
-  float* data = a.data();
+  float* FST_ATTRIBUTE_UNUSED data = a.data();
 
-  const fst::aligned_buffer<float, 2, alignof(float), false>& ca = a;
-  const float* cdata = ca.data();
+  const fst::aligned_buffer<float, 2, alignof(float), false>& FST_ATTRIBUTE_UNUSED ca = a;
+  //  const float* cdata = ca.data();
 
   //  int* p2 = static_cast<int*>(aligned_alloc(1024, 1024));
-  EXPECT_EQ(0, 0);
+  //  EXPECT_EQ(0, 0);
   //
   //  // Move a to b, b should now be empty.
   //  fst::unordered_array<int, 2> b(std::move(a));

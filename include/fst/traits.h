@@ -32,7 +32,7 @@
 ///
 
 #pragma once
-#include "fst/common.h"
+#include <fst/config>
 #include <cstddef>
 #include <type_traits>
 #include <iterator>

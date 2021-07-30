@@ -47,7 +47,7 @@ TEST(fixed_vector, push) {
   using pair_type = std::pair<int, int>;
   fst::fixed_vector<pair_type, 2> b;
   b.push_back(pair_type(3, 4));
-  b.push_back(std::move(pair_type(5, 6)));
+  b.push_back(pair_type(5, 6));
   EXPECT_EQ(b.size(), 2);
   EXPECT_EQ(b[0], pair_type(3, 4));
   EXPECT_EQ(b[1], pair_type(5, 6));

@@ -11,7 +11,7 @@ TEST(slot_map, constructor) {
 
   key_type k1 = map.insert("Bingo1");
   key_type k2 = map.insert("Bingo2");
-  key_type k3 = map.emplace("Bingo3");
+  map.emplace("Bingo3");
 
   {
     auto it = map.find(k1);
@@ -79,11 +79,11 @@ TEST(slot_map, small_vector) {
   EXPECT_EQ(map.capacity(), 2);
   EXPECT_EQ(map.size(), 1);
 
-  key_type k3 = map.insert("Bingo3");
+  map.insert("Bingo3");
   EXPECT_EQ(map.capacity(), 2);
   EXPECT_EQ(map.size(), 2);
 
-  key_type k4 = map.insert("Bingo4");
+  map.insert("Bingo4");
   EXPECT_TRUE(map.capacity() > 2);
   EXPECT_EQ(map.size(), 3);
 }

@@ -113,8 +113,8 @@ TEST(action, execute) {
 
 TEST(action, construct) {
   int a = 1;
-  int b = 2;
-  int c = 3;
+  //  int b = 2;
+  //  int c = 3;
 
   executor e;
   fst::action act0([&a]() { a = 4; });
