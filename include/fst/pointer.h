@@ -32,8 +32,8 @@
 ///
 
 #pragma once
-#include "fst/assert.h"
-#include "fst/traits.h"
+#include <fst/assert>
+#include <fst/traits>
 #include <algorithm>
 #include <cstddef>
 #include <memory>
@@ -43,6 +43,12 @@
 namespace fst {
 template <typename T>
 using maybe_null = T;
+
+///
+/// owner is designed as a bridge for code that must deal directly with owning pointers for some reason.
+/// T must be a pointer type (any type other than pointer type is disallow).
+template <class T, class = std::enable_if_t<std::is_pointer<T>::value>>
+using owner = T;
 
 ///
 /// not_null

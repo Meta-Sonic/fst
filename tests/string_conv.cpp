@@ -124,25 +124,6 @@ TEST(string_conv, to_string_float_precision) {
   EXPECT_EQ("-0.70", fst::string_conv::to_string<2>(buffer, -0.70f));
 }
 
-// inline std::vector<std::string> init_int_numbers() {
-//  std::vector<std::string> numbers;
-//  numbers.resize(buffer_size);
-//
-//  std::default_random_engine generator;
-//  std::uniform_int_distribution<int> distribution(-100000, 100000);
-//
-//  for(std::size_t i = 0; i < numbers.size(); i++) {
-//    numbers[i] = std::to_string(distribution(generator));
-//  }
-//
-//  return numbers;
-//}
-//
-// inline const std::vector<std::string>& get_str_int_numbers() {
-//  static std::vector<std::string> numbers = init_int_numbers();
-//  return numbers;
-//}
-
  TEST(string_conv, to_int) {
   {
     std::string str = std::to_string(-1000);

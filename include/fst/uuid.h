@@ -32,7 +32,6 @@
 ///
 
 #pragma once
-
 #include <fst/ascii>
 #include <fst/span>
 #include <algorithm>
