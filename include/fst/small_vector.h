@@ -191,7 +191,7 @@ namespace sv_detail {
     }
 
     /// Check whether Elt will be invalidated by resizing the vector to NewSize.
-    void assertSafeToReferenceAfterResize(const void* Elt, size_t NewSize) {
+    void assertSafeToReferenceAfterResize(FST_ATTRIBUTE_UNUSED const void* Elt, FST_ATTRIBUTE_UNUSED size_t NewSize) {
       assert(isSafeToReferenceAfterResize(Elt, NewSize)
           && "Attempting to reference an element of the vector in an operation "
              "that invalidates it");
