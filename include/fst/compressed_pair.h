@@ -1,92 +1,70 @@
-/////////////////////////////////////////////////////////////////////////////
-// Copyright (c) Electronic Arts Inc. All rights reserved.
-/////////////////////////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////////////////////////
-// The compressed pair class is very similar to std::pair, but if either of the
-// template arguments are empty classes, then the "empty base-class optimization"
-// is applied to compress the size of the pair.
-//
-// The design for compressed_pair here is very similar to that found in template
-// metaprogramming libraries such as Boost, GCC, and Metrowerks, given that
-// these libraries have established this interface as a defacto standard for
-// solving this problem. Also, these are described in various books on the
-// topic of template metaprogramming, such as "Modern C++ Design".
-//
-// template <typename T1, typename T2>
-// class compressed_pair
-// {
-// public:
-//     typedef T1                                                 first_type;
-//     typedef T2                                                 second_type;
-//     typedef typename call_traits<first_type>::param_type       first_param_type;
-//     typedef typename call_traits<second_type>::param_type      second_param_type;
-//     typedef typename call_traits<first_type>::reference        first_reference;
-//     typedef typename call_traits<second_type>::reference       second_reference;
-//     typedef typename call_traits<first_type>::const_reference  first_const_reference;
-//     typedef typename call_traits<second_type>::const_reference second_const_reference;
-//
-//     compressed_pair() : base() {}
-//     compressed_pair(first_param_type x, second_param_type y);
-//     explicit compressed_pair(first_param_type x);
-//     explicit compressed_pair(second_param_type y);
-//
-//     compressed_pair& operator=(const compressed_pair&);
-//
-//     first_reference       first();
-//     first_const_reference first() const;
-//
-//     second_reference       second();
-//     second_const_reference second() const;
-//
-//     void swap(compressed_pair& y);
-// };
-//
-// The two members of the pair can be accessed using the member functions first()
-// and second(). Note that not all member functions can be instantiated for all
-// template parameter types. In particular compressed_pair can be instantiated for
-// reference and array types, however in these cases the range of constructors that
-// can be used are limited. If types T1 and T2 are the same type, then there is
-// only one version of the single-argument constructor, and this constructor
-// initialises both values in the pair to the passed value.
-//
-// Note that compressed_pair can not be instantiated if either of the template
-// arguments is a union type, unless there is compiler support for is_union,
-// or if is_union is specialised for the union type.
-///////////////////////////////////////////////////////////////////////////////
+///
+/// BSD 3-Clause License
+///
+/// Copyright (c) 2021, Alexandre Arsenault
+/// All rights reserved.
+///
+/// Redistribution and use in source and binary forms, with or without
+/// modification, are permitted provided that the following conditions are met:
+///
+/// * Redistributions of source code must retain the above copyright notice, this
+///   list of conditions and the following disclaimer.
+///
+/// * Redistributions in binary form must reproduce the above copyright notice,
+///   this list of conditions and the following disclaimer in the documentation
+///   and/or other materials provided with the distribution.
+///
+/// * Neither the name of the copyright holder nor the names of its
+///   contributors may be used to endorse or promote products derived from
+///   this software without specific prior written permission.
+///
+/// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+/// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+/// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+/// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+/// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+/// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+/// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+/// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+/// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+/// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+/// POSSIBILITY OF SUCH DAMAGE.
+///
 
 #pragma once
 #include <fst/traits>
-
-//#if defined(_MSC_VER) && (_MSC_VER >= 1900)  // VS2015 or later
-//	EA_DISABLE_VC_WARNING(4626 5027) // warning C4626: 'eastl::compressed_pair_imp<T1,T2,0>': assignment operator was
-// implicitly defined as deleted because a base class assignment operator is inaccessible or deleted #endif
 
 namespace fst {
 template <typename T1, typename T2>
 class compressed_pair;
 
 namespace detail {
+  enum class compressed_pair_version { normal, first_empty, second_empty, diff_empty, same_empty, same_normal };
+
   template <typename T1, typename T2>
-  inline constexpr std::size_t get_compressed_pair_version() {
+  inline constexpr compressed_pair_version get_compressed_pair_version() {
     constexpr bool same = std::is_same_v<std::remove_cv_t<T1>, std::remove_cv_t<T2>>;
     constexpr bool t1_empty = std::is_empty<T1>::value;
     constexpr bool t2_empty = std::is_empty<T2>::value;
+    using version = compressed_pair_version;
 
     if constexpr (same) {
-      return t1_empty ? 4 : 5;
+      return t1_empty ? version::same_empty : version::same_normal;
+    }
+    else if constexpr (t1_empty == t2_empty) {
+      return t1_empty ? version::diff_empty : version::normal;
     }
     else {
-      return t1_empty ? (t2_empty ? 3 : 1) : (t2_empty ? 2 : 0);
+      return t1_empty ? version::first_empty : version::second_empty;
     }
   }
 
-  template <typename T1, typename T2, int version>
+  template <typename T1, typename T2, compressed_pair_version version>
   class compressed_pair_imp;
 
   // Derive from neither.
   template <typename T1, typename T2>
-  class compressed_pair_imp<T1, T2, 0> {
+  class compressed_pair_imp<T1, T2, compressed_pair_version::normal> {
   public:
     using first_type = T1;
     using second_type = T2;
@@ -127,7 +105,7 @@ namespace detail {
 
   // Derive from T1.
   template <typename T1, typename T2>
-  class compressed_pair_imp<T1, T2, 1> : private T1 {
+  class compressed_pair_imp<T1, T2, compressed_pair_version::first_empty> : private T1 {
   public:
     using first_type = T1;
     using second_type = T2;
@@ -167,7 +145,7 @@ namespace detail {
 
   // Derive from T2.
   template <typename T1, typename T2>
-  class compressed_pair_imp<T1, T2, 2> : private T2 {
+  class compressed_pair_imp<T1, T2, compressed_pair_version::second_empty> : private T2 {
   public:
     using first_type = T1;
     using second_type = T2;
@@ -207,7 +185,7 @@ namespace detail {
 
   // Derive from T1 and T2.
   template <typename T1, typename T2>
-  class compressed_pair_imp<T1, T2, 3> : private T1, private T2 {
+  class compressed_pair_imp<T1, T2, compressed_pair_version::diff_empty> : private T1, private T2 {
   public:
     using first_type = T1;
     using second_type = T2;
@@ -241,7 +219,7 @@ namespace detail {
   /// Note does not actually store an instance of T2 at all;
   /// but reuses T1 base class for both first() and second().
   template <typename T1, typename T2>
-  class compressed_pair_imp<T1, T2, 4> : private T1 {
+  class compressed_pair_imp<T1, T2, compressed_pair_version::same_empty> : private T1 {
   public:
     using first_type = T1;
     using second_type = T2;
@@ -269,7 +247,7 @@ namespace detail {
 
   // T1 == T2 and are not empty.
   template <typename T1, typename T2>
-  class compressed_pair_imp<T1, T2, 5> {
+  class compressed_pair_imp<T1, T2, compressed_pair_version::same_normal> {
   public:
     using first_type = T1;
     using second_type = T2;
