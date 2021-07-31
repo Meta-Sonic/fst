@@ -476,8 +476,6 @@ namespace detail {
     T size = (T)(1 - sign);
 
     static constexpr std::size_t max_size = integer_mult_values<unsigned long long>::size;
-    //    static constexpr std::size_t max_size
-    //        = sizeof(integer_mult_values<unsigned long long>::values) / sizeof(unsigned long long);
     for (unsigned long long mul = 10; val >= mul && fst::is_less(size, max_size); mul *= 10) {
       size++;
     }
@@ -521,8 +519,6 @@ namespace detail {
 
     T size = 1;
     static constexpr std::size_t max_size = integer_mult_values<unsigned long long>::size;
-    //    static constexpr std::size_t max_size
-    //        = sizeof(integer_mult_values<unsigned long long>::values) / sizeof(unsigned long long);
     for (unsigned long long mul = 10; val >= mul && size < max_size; mul *= 10) {
       size++;
     }
@@ -721,8 +717,6 @@ inline std::string to_string(T value) {
   return std::string(to_string<_Precision, T>(buffer, value));
 }
 } // namespace fst::string_conv_v2.
-
-namespace fst::string_conv_v3 {} // namespace fst::string_conv_v3.
 
 namespace fst {
 namespace string_conv = string_conv_v2;

@@ -36,7 +36,8 @@
 
 namespace fst {
 inline constexpr char distance_between_lower_and_upper_case() { return 'a' - 'A'; }
-inline constexpr bool is_char(char c) { return c >= 0 && c <= 127; }
+// inline constexpr bool is_char(char c) { return c >= 0 && c <= 127; }
+inline constexpr bool is_char(char c) { return c >= 0; }
 inline constexpr bool is_null(char c) { return c == 0; }
 inline constexpr bool is_space(char c) { return c == ' '; }
 inline constexpr bool is_tab(char c) { return c == '\t'; }

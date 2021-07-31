@@ -42,6 +42,13 @@
 #include <intrin.h>
 #endif
 
+#if defined(__SIZEOF_INT128__)
+#if __FST_GCC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif // __FST_GCC__
+#endif // defined(__SIZEOF_INT128__)
+
 namespace fst::dragonbox {
 	namespace detail {
 		template <class T>
@@ -3305,3 +3312,8 @@ namespace fst::dragonbox {
 
 //#endif
 
+#if defined(__SIZEOF_INT128__)
+#if __FST_GCC__
+#pragma GCC diagnostic pop
+#endif // __FST_GCC__
+#endif // defined(__SIZEOF_INT128__)

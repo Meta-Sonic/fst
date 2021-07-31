@@ -115,7 +115,7 @@ public:
     bool firstDigit = true;
     int hasBraces = 0;
     size_t index = 0;
-    size_t size = size = strlen(str);
+    size_t size = strlen(str);
 
     if (str == nullptr || size == 0) {
       return false;
