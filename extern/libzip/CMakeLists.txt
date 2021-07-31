@@ -224,9 +224,9 @@ elseif (MBEDTLS_FOUND)
   set(HAVE_MBEDTLS 1)
 endif()
 
-if (NOT HAVE_CRYPTO)
-  message(WARNING "-- neither Common Crypto, GnuTLS, mbed TLS, OpenSSL, nor Windows Cryptography found; AES support disabled")
-endif()
+# if (NOT HAVE_CRYPTO)
+  # message(WARNING "-- neither Common Crypto, GnuTLS, mbed TLS, OpenSSL, nor Windows Cryptography found; AES support disabled")
+# endif()
 
 if(MSVC)
   add_compile_definitions(_CRT_SECURE_NO_WARNINGS)

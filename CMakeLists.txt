@@ -29,6 +29,19 @@ function(set_fst_compile_options REQUIRED_ARG EXPOSURE)
 	endif()
 endfunction()
 
+function(set_fst_runtime_compile_options REQUIRED_ARG EXPOSURE)
+	if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+		# target_compile_options(${REQUIRED_ARG} ${EXPOSURE} -Wall -Wextra -Wpedantic -Wno-gnu-zero-variadic-macro-arguments)
+	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+		target_compile_options(${REQUIRED_ARG} ${EXPOSURE} -Wno-attributes)
+	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+		# using Intel C++
+	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+		# target_compile_definitions(${REQUIRED_ARG} ${EXPOSURE} _SILENCE_CXX17_UNCAUGHT_EXCEPTION_DEPRECATION_WARNING)
+		# target_compile_options(${REQUIRED_ARG} ${EXPOSURE} /Zc:__cplusplus /Zc:alignedNew /permissive- /W4 /utf-8 )
+	endif()
+endfunction()
+
 #Conan search paths.
 set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR} ${CMAKE_MODULE_PATH})
 set(CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR} ${CMAKE_PREFIX_PATH})
@@ -96,6 +109,7 @@ if (${FST_BUILD_TESTS})
     add_executable(${FST_TEST_NAME} ${FST_TEST_SOURCES})
 
     set_fst_compile_options(${FST_TEST_NAME} PRIVATE)
+    set_fst_runtime_compile_options(${FST_TEST_NAME} PRIVATE)
 
     target_link_libraries(${FST_TEST_NAME} PUBLIC
         GTest::gtest
@@ -118,6 +132,7 @@ if (${FST_BUILD_BENCH})
 
     add_executable(${FST_BENCH_NAME} ${FST_BENCH_SOURCES})
     set_fst_compile_options(${FST_BENCH_NAME} PRIVATE)
+    set_fst_runtime_compile_options(${FST_TEST_NAME} PRIVATE)
 
     set_target_properties(${FST_BENCH_NAME} PROPERTIES
         # CXX_STANDARD 17
