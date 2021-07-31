@@ -81,10 +81,10 @@ namespace detail {
         : _first(x)
         , _second(y) {}
 
-    compressed_pair_imp(first_param_type x)
+    explicit compressed_pair_imp(first_param_type x)
         : _first(x) {}
 
-    compressed_pair_imp(second_param_type y)
+    explicit compressed_pair_imp(second_param_type y)
         : _second(y) {}
 
     inline first_reference first() { return _first; }
@@ -122,10 +122,10 @@ namespace detail {
         : first_type(x)
         , _second(y) {}
 
-    compressed_pair_imp(first_param_type x)
+    explicit compressed_pair_imp(first_param_type x)
         : first_type(x) {}
 
-    compressed_pair_imp(second_param_type y)
+    explicit compressed_pair_imp(second_param_type y)
         : _second(y) {}
 
     inline first_reference first() { return *this; }
@@ -162,10 +162,10 @@ namespace detail {
         : second_type(y)
         , _first(x) {}
 
-    compressed_pair_imp(first_param_type x)
+    explicit compressed_pair_imp(first_param_type x)
         : _first(x) {}
 
-    compressed_pair_imp(second_param_type y)
+    explicit compressed_pair_imp(second_param_type y)
         : second_type(y) {}
 
     inline first_reference first() { return _first; }
@@ -202,10 +202,10 @@ namespace detail {
         : first_type(x)
         , second_type(y) {}
 
-    compressed_pair_imp(first_param_type x)
+    explicit compressed_pair_imp(first_param_type x)
         : first_type(x) {}
 
-    compressed_pair_imp(second_param_type y)
+    explicit compressed_pair_imp(second_param_type y)
         : second_type(y) {}
 
     inline first_reference first() { return *this; }
@@ -235,7 +235,7 @@ namespace detail {
     compressed_pair_imp(first_param_type x, second_param_type)
         : first_type(x) {}
 
-    compressed_pair_imp(first_param_type x)
+    explicit compressed_pair_imp(first_param_type x)
         : first_type(x) {}
 
     inline first_reference first() { return *this; }
@@ -264,7 +264,7 @@ namespace detail {
         : _first(x)
         , _second(y) {}
 
-    inline compressed_pair_imp(first_param_type x)
+    inline explicit compressed_pair_imp(first_param_type x)
         : _first(x)
         , _second(x) {}
 
@@ -302,16 +302,7 @@ public:
   using first_const_reference = typename base::first_const_reference;
   using second_const_reference = typename base::second_const_reference;
 
-  compressed_pair() = default;
-
-  compressed_pair(first_param_type x, second_param_type y)
-      : base(x, y) {}
-
-  explicit compressed_pair(first_param_type x)
-      : base(x) {}
-
-  explicit compressed_pair(second_param_type y)
-      : base(y) {}
+  using base::base;
 
   inline first_reference first() { return base::first(); }
   inline first_const_reference first() const { return base::first(); }
@@ -320,43 +311,8 @@ public:
   inline void swap(compressed_pair& y) { base::swap(y); }
 };
 
-// Partial specialisation for case where T1 == T2.
-template <typename T>
-class compressed_pair<T, T> : private detail::compressed_pair_base<T, T> {
-private:
-  using base = detail::compressed_pair_base<T, T>;
-
-public:
-  using first_type = typename base::first_type;
-  using second_type = typename base::second_type;
-  using first_param_type = typename base::first_param_type;
-  using second_param_type = typename base::second_param_type;
-  using first_reference = typename base::first_reference;
-  using second_reference = typename base::second_reference;
-  using first_const_reference = typename base::first_const_reference;
-  using second_const_reference = typename base::second_const_reference;
-
-  compressed_pair() = default;
-
-  compressed_pair(first_param_type x, second_param_type y)
-      : base(x, y) {}
-
-  explicit compressed_pair(first_param_type x)
-      : base(x) {}
-
-  inline first_reference first() { return base::first(); }
-  inline first_const_reference first() const { return base::first(); }
-  inline second_reference second() { return base::second(); }
-  inline second_const_reference second() const { return base::second(); }
-  inline void swap(compressed_pair<T, T>& y) { base::swap(y); }
-};
-
 template <typename T1, typename T2>
 inline void swap(compressed_pair<T1, T2>& x, compressed_pair<T1, T2>& y) {
   x.swap(y);
 }
 } // namespace fst
-
-//#if defined(_MSC_VER) && (_MSC_VER >= 1900)  // VS2015 or later
-//	EA_RESTORE_VC_WARNING()
-//#endif
