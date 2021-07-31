@@ -98,13 +98,9 @@ public:
     }
 
     inline event_id get_id() const noexcept { return _id; }
-
     inline event_manager* get_event_manager() noexcept { return _evt_manager; }
-
     inline const event_manager* get_event_manager() const noexcept { return _evt_manager; }
-
     inline bool is_valid() const noexcept { return _evt_manager && _id != invalid_id; }
-
     inline bool is_connected() const noexcept { return is_valid() && _evt_manager->is_connected(_id); }
 
   private:
@@ -141,7 +137,6 @@ public:
   }
 
   inline bool remove_event(event_id __id) { return _event_stack.remove((std::size_t)__id); }
-
   inline bool is_connected(event_id __id) const { return _event_stack.is_connected((std::size_t)__id); }
 
 private:
@@ -155,7 +150,6 @@ private:
       bool is_recurrent;
     };
 
-    //    using vector_type = std::vector<event_data>;
     using vector_type = fst::stack_fixed_vector<event_data, maximum_events_count>;
 
     inline std::size_t add(

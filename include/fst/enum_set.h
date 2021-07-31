@@ -54,7 +54,6 @@ public:
   constexpr enum_set() noexcept { _is_in_array.fill(false); }
 
   inline constexpr void insert(value_type value) noexcept {
-    //    fst::print("enum_set:insert(value_type)", std::size_t(value), _is_in_array[value]);
     fst_assert(std::size_t(value) < maximum_size, "fixed_unordered_set::insert Out of bound value.");
     if (_is_in_array[value]) {
       return;
@@ -65,7 +64,6 @@ public:
   }
 
   inline constexpr void insert(size_type __index) noexcept {
-    //    fst::print("enum_set:insert", __index);
     insert((value_type)__index);
   }
 
@@ -83,12 +81,10 @@ public:
 
   inline constexpr bool contains(value_type value) const noexcept {
     fst_assert(std::size_t(value) < maximum_size, "fixed_unordered_set::contains Out of bound value.");
-    //    fst::print("enum_set:contains(value_type)", std::size_t(value));
     return _is_in_array[value];
   }
 
   inline constexpr bool contains(size_type __index) const noexcept {
-    //    fst::print("enum_set:contains", __index);
     return contains((value_type)__index);
   }
 

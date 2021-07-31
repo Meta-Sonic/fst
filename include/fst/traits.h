@@ -65,6 +65,23 @@ template <typename _Iterator>
 using is_random_access_iterator
     = std::is_same<typename std::iterator_traits<_Iterator>::iterator_category, std::random_access_iterator_tag>;
 
+//
+// call_param_type.
+//
+template <typename _Tp, std::size_t _MinimumSize = sizeof(void*)>
+struct call_param_type {
+  using type = std::conditional_t<std::is_pointer_v<_Tp>, _Tp const,
+      std::conditional_t<sizeof(_Tp) <= _MinimumSize, const _Tp, const _Tp&>>;
+};
+
+template <typename _Tp, std::size_t _MinimumSize>
+struct call_param_type<_Tp&, _MinimumSize> {
+  using type = _Tp&;
+};
+
+template <typename _Tp, std::size_t _MinimumSize = sizeof(void*)>
+using call_param_type_t = typename call_param_type<_Tp, _MinimumSize>::type;
+
 template <class _Tp>
 struct type_identity {
   using type = _Tp;

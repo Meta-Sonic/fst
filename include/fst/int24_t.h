@@ -39,7 +39,7 @@
 #include <cstdint>
 
 namespace fst {
-#pragma pack(push, 1)
+FST_PACKED_START
 class int24_t {
 private:
   std::uint8_t _data[3];
@@ -121,7 +121,7 @@ public:
     return stream;
   }
 };
-#pragma pack(pop)
+FST_PACKED_END
 
 //
 // Operator ==
