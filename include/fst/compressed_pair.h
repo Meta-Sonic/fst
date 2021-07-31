@@ -67,9 +67,8 @@ template <typename T1, typename T2>
 class compressed_pair;
 
 namespace detail {
-
   template <typename T1, typename T2>
-  inline std::size_t get_compressed_pair_version() {
+  inline constexpr std::size_t get_compressed_pair_version() {
     constexpr bool same = std::is_same_v<std::remove_cv_t<T1>, std::remove_cv_t<T2>>;
     constexpr bool t1_empty = std::is_empty<T1>::value;
     constexpr bool t2_empty = std::is_empty<T2>::value;
@@ -81,39 +80,6 @@ namespace detail {
       return t1_empty ? (t2_empty ? 3 : 1) : (t2_empty ? 2 : 0);
     }
   }
-
-  template <typename T1, typename T2, bool isSame, bool firstEmpty, bool secondEmpty>
-  struct compressed_pair_switch;
-
-  template <typename T1, typename T2>
-  struct compressed_pair_switch<T1, T2, false, false, false> {
-    static const int value = 0;
-  };
-
-  template <typename T1, typename T2>
-  struct compressed_pair_switch<T1, T2, false, true, false> {
-    static const int value = 1;
-  };
-
-  template <typename T1, typename T2>
-  struct compressed_pair_switch<T1, T2, false, false, true> {
-    static const int value = 2;
-  };
-
-  template <typename T1, typename T2>
-  struct compressed_pair_switch<T1, T2, false, true, true> {
-    static const int value = 3;
-  };
-
-  template <typename T1, typename T2>
-  struct compressed_pair_switch<T1, T2, true, true, true> {
-    static const int value = 4;
-  };
-
-  template <typename T1, typename T2>
-  struct compressed_pair_switch<T1, T2, true, false, false> {
-    static const int value = 5;
-  };
 
   template <typename T1, typename T2, int version>
   class compressed_pair_imp;
@@ -340,9 +306,7 @@ namespace detail {
   };
 
   template <typename T1, typename T2>
-  using compressed_pair_base = compressed_pair_imp<T1, T2,
-      compressed_pair_switch<T1, T2, std::is_same<std::remove_cv_t<T1>, std::remove_cv_t<T2>>::value,
-          std::is_empty<T1>::value, std::is_empty<T2>::value>::value>;
+  using compressed_pair_base = compressed_pair_imp<T1, T2, get_compressed_pair_version<T1, T2>()>;
 } // namespace detail.
 
 template <typename T1, typename T2>
