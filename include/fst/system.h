@@ -40,6 +40,10 @@
 #include <pwd.h>
 #elif __FST_WINDOWS__
 #include <shlobj_core.h>
+#elif __FST_LINUX__
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
 #endif
 
 namespace fst {
@@ -56,7 +60,6 @@ namespace system_detail {
 inline std::filesystem::path get_home_directory() {
   static std::filesystem::path home_dir = system_detail::get_home_directory();
   return home_dir;
-  ;
 }
 
 inline std::filesystem::path get_user_app_data_directory() {
@@ -94,6 +97,38 @@ inline std::filesystem::path get_common_app_data_directory() {
 inline std::filesystem::path get_global_app_directory() {
   return system_detail::get_window_special_folder_path(CSIDL_PROGRAM_FILES);
 }
+
+#elif __FST_LINUX__
+// https://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard
+// Global configuration -> /etc/appname
+// Read-only, independent of machine architecture -> /usr/share/appname
+// Read-only, machine specific -> /usr/lib/appname
+// Read-write -> /var/lib/appname
+
+namespace system_detail {
+  inline std::filesystem::path get_home_directory() {
+    // You should first check the $HOME environment variable, and if that does not exist, use getpwuid.
+    // if ((homedir = getenv("HOME")) == NULL) {
+    //  homedir = getpwuid(getuid())->pw_dir;
+    //}
+
+    passwd* p = getpwuid(getuid());
+    fst_assert(p != nullptr, "Can't get pwuid.");
+
+    return p ? std::filesystem::path(p->pw_dir) : "";
+  }
+} // namespace system_detail.
+
+inline std::filesystem::path get_home_directory() {
+  static std::filesystem::path home_dir = system_detail::get_home_directory();
+  return home_dir;
+}
+
+inline std::filesystem::path get_user_app_data_directory() { return "/var/lib"; }
+
+inline std::filesystem::path get_common_app_data_directory() { return "/usr/share"; }
+
+inline std::filesystem::path get_global_app_directory() { return "/usr/bin"; }
 #else
 
 #warning "fst::system_path not implemented for this platform."
