@@ -82,6 +82,49 @@ struct call_param_type<_Tp&, _MinimumSize> {
 template <typename _Tp, std::size_t _MinimumSize = sizeof(void*)>
 using call_param_type_t = typename call_param_type<_Tp, _MinimumSize>::type;
 
+//
+// Call traits.
+//
+template <typename _Tp>
+struct call_traits {
+  using value_type = _Tp;
+  using reference = _Tp&;
+  using const_reference = const _Tp&;
+  using param_type = call_param_type_t<_Tp>;
+};
+
+template <typename _Tp>
+struct call_traits<_Tp&> {
+  using value_type = _Tp&;
+  using reference = _Tp&;
+  using const_reference = const _Tp&;
+  using param_type = _Tp&;
+};
+
+template <typename _Tp, std::size_t N>
+struct call_traits<_Tp[N]> {
+private:
+  using array_type = _Tp[N];
+
+public:
+  using value_type = const _Tp*;
+  using reference = array_type&;
+  using const_reference = const array_type&;
+  using param_type = const _Tp* const;
+};
+
+template <typename _Tp, std::size_t N>
+struct call_traits<const _Tp[N]> {
+private:
+  using array_type = const _Tp[N];
+
+public:
+  using value_type = const _Tp*;
+  using reference = array_type&;
+  using const_reference = const array_type&;
+  using param_type = const _Tp* const;
+};
+
 template <class _Tp>
 struct type_identity {
   using type = _Tp;
