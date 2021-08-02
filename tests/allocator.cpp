@@ -30,7 +30,7 @@ namespace {
 
 TEST(allocator, std) {
   using pool_allocator_type = fst::memory_pool_allocator<>;
-  using allocator_type = fst::StdAllocator<int, pool_allocator_type>;
+  using allocator_type = fst::allocator<int, pool_allocator_type>;
 
   constexpr std::size_t n_int = 64;
   constexpr std::size_t data_size = n_int * sizeof(int) + pool_allocator_type::minimum_content_size;
