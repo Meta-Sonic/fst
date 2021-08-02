@@ -209,9 +209,9 @@ public:
   inline const_reverse_iterator crend() const noexcept { return rend(); }
 
   // Capacity.
-  [[nodiscard]] inline size_type size() const noexcept { return _size; }
-  [[nodiscard]] inline constexpr size_type capacity() const noexcept { return maximum_size; }
-  [[nodiscard]] inline bool empty() const noexcept { return _size == 0; }
+  FST_NODISCARD inline size_type size() const noexcept { return _size; }
+  FST_NODISCARD inline constexpr size_type capacity() const noexcept { return maximum_size; }
+  FST_NODISCARD inline bool empty() const noexcept { return _size == 0; }
 
   // Element access.
   inline reference operator[](size_type n) {

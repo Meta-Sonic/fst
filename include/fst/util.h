@@ -136,7 +136,7 @@ struct is_only_one_false_t {
 };
 
 template <typename T, typename P>
-[[nodiscard]] inline constexpr bool assign(T& dst, const P& src) {
+FST_NODISCARD inline constexpr bool assign(T& dst, const P& src) {
   if(dst == src) {
     return false;
   }

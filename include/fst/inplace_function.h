@@ -48,7 +48,7 @@
 namespace fst {
 
 namespace inplace_function_detail {
-  static constexpr size_t InplaceFunctionDefaultCapacity = 32;
+  static constexpr size_t inplace_function_default_capacity = 32;
 
   template <size_t Cap>
   union aligned_storage_helper {
@@ -165,7 +165,7 @@ namespace inplace_function_detail {
   using is_invocable_r = is_invocable_r_impl<void, R, F, Args...>;
 } // namespace inplace_function_detail
 
-template <class Signature, size_t Capacity = inplace_function_detail::InplaceFunctionDefaultCapacity,
+template <class Signature, size_t Capacity = inplace_function_detail::inplace_function_default_capacity,
     size_t Alignment = alignof(inplace_function_detail::aligned_storage_t<Capacity>)>
 class inplace_function; // unspecified
 

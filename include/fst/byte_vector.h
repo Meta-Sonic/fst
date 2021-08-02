@@ -107,9 +107,9 @@ namespace byte_vector_detail {
     //
     // MARK: Capacity.
     //
-    [[nodiscard]] inline size_type size() const noexcept { return _buffer.size(); }
-    [[nodiscard]] inline constexpr size_type max_size() const noexcept { return _buffer.max_size(); }
-    [[nodiscard]] inline bool empty() const noexcept { return _buffer.empty(); }
+    FST_NODISCARD inline size_type size() const noexcept { return _buffer.size(); }
+    FST_NODISCARD inline constexpr size_type max_size() const noexcept { return _buffer.max_size(); }
+    FST_NODISCARD inline bool empty() const noexcept { return _buffer.empty(); }
 
     //
     // MARK: Resize, reserve and clear.

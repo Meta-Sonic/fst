@@ -87,7 +87,7 @@ public:
   //
   // MARK: Capacity.
   //
-  [[nodiscard]] inline bool is_valid() const noexcept { return size() != 0; }
+  FST_NODISCARD inline bool is_valid() const noexcept { return size() != 0; }
   using span_type::empty;
   using span_type::size;
 

@@ -38,7 +38,6 @@
 #include <fst/span>
 #include <fst/util>
 #include <fst/verified_value>
-//#include "fst/string_conv.h"
 #include <algorithm>
 #include <array>
 #include <cstring>
@@ -142,11 +141,11 @@ public:
   inline constexpr const_reverse_iterator crend() const noexcept { return rend(); }
 
   // Capacity.
-  [[nodiscard]] inline constexpr size_type size() const noexcept { return _size; }
-  [[nodiscard]] inline constexpr size_type length() const noexcept { return _size; }
-  [[nodiscard]] inline constexpr size_type max_size() const noexcept { return _buffer.size(); }
-  [[nodiscard]] inline constexpr size_type capacity() const noexcept { return _buffer.size(); }
-  [[nodiscard]] inline constexpr bool empty() const noexcept { return _size == 0; }
+  FST_NODISCARD inline constexpr size_type size() const noexcept { return _size; }
+  FST_NODISCARD inline constexpr size_type length() const noexcept { return _size; }
+  FST_NODISCARD inline constexpr size_type max_size() const noexcept { return _buffer.size(); }
+  FST_NODISCARD inline constexpr size_type capacity() const noexcept { return _buffer.size(); }
+  FST_NODISCARD inline constexpr bool empty() const noexcept { return _size == 0; }
 
   // Element access.
   inline constexpr reference at(size_type pos) {

@@ -41,6 +41,10 @@
 /// FST_CONFIG_NO_EXCEPTIONS :
 ///
 
+#define __FST_VERSION_MAJOR__ 1
+#define __FST_VERSION_MINOR__ 0
+#define __FST_VERSION_PATCH__ 0
+
 // clang-format off
 #ifndef __has_include
   #define __has_include(x) 0

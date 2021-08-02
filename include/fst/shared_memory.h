@@ -1,7 +1,7 @@
 ///
 /// BSD 3-Clause License
 ///
-/// Copyright (c) 2020, Alexandre Arsenault
+/// Copyright (c) 2021, Alexandre Arsenault
 /// All rights reserved.
 ///
 /// Redistribution and use in source and binary forms, with or without
@@ -32,28 +32,50 @@
 ///
 
 #pragma once
-#include <fst/assert>
-#include <fst/span>
+#include <fst/config>
+#include <cstdint>
+#include <string>
 
 namespace fst {
-template <typename T>
-class unmanaged_vector {
+class shared_memory {
 public:
-  using value_type = _Tp;
-  using reference = value_type&;
-  using const_reference = std::conditional_t<std::is_fundamental<value_type>::value, const value_type&, value_type>;
-  using pointer = value_type*;
-  using const_pointer = const value_type*;
-  using iterator = pointer;
-  using const_iterator = const_pointer;
-  using reverse_iterator = std::reverse_iterator<iterator>;
-  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-  using size_type = std::size_t;
-  using difference_type = std::ptrdiff_t;
-  using buffer_type = fst::span<value_type>;
+  enum class error_type {
+    none = 0,
+    creation_failed = 100,
+    mapping_failed = 110,
+    opening_failed = 120,
+  };
+
+  shared_memory() = default;
+  shared_memory(const shared_memory&) = delete;
+  shared_memory(shared_memory&&);
+  ~shared_memory();
+
+  shared_memory& operator=(const shared_memory&) = delete;
+  shared_memory& operator=(shared_memory&&);
+
+  error_type create(const std::string& __name, std::size_t __size);
+  error_type open(const std::string& __name, std::size_t __size);
+  void close();
+
+  inline bool is_valid() const { return _data && _size; }
+  inline std::size_t size() { return _size; };
+  inline const std::string& name() { return _name; }
+  inline std::uint8_t* data() { return _data; }
 
 private:
-  buffer_type _buffer;
-  size_type _size;
+  std::string _name;
+  std::uint8_t* _data = nullptr;
+  std::size_t _size = 0;
+
+#if __FST_WINDOWS__
+  using handle_type = void*;
+  static constexpr handle_type handle_default_value = nullptr;
+#else
+  using handle_type = int;
+  static constexpr handle_type handle_default_value = -1;
+#endif
+
+  handle_type _handle = handle_default_value;
 };
 } // namespace fst.
