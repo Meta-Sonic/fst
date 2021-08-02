@@ -40,18 +40,13 @@
 #include <type_traits>
 #include <cstdlib>
 
-#define RAPIDJSON_ALIGN(x) (((x) + static_cast<std::size_t>(7u)) & ~static_cast<std::size_t>(7u))
-#define RAPIDJSON_ALLOCATOR_DEFAULT_CHUNK_CAPACITY (64 * 1024)
 #define RAPIDJSON_NEW(TypeName) new TypeName
 #define RAPIDJSON_DELETE(x) delete x
 
 namespace fst {
-
 struct default_allocator {
   inline static void* malloc(std::size_t size) { return std::malloc(size); }
-
   inline static void* realloc(void* ptr, std::size_t new_size) { return std::realloc(ptr, new_size); }
-
   inline static void free(void* ptr) { std::free(ptr); }
 };
 
@@ -97,34 +92,32 @@ public:
 */
 template <typename BaseAllocator = crt_allocator>
 class memory_pool_allocator {
+
+  static constexpr std::size_t default_alignement = 8;
+  static constexpr std::size_t default_chunk_capacity = 64 * 1024;
+
   //! Chunk header for perpending to each chunk.
   /*! Chunks are stored as a singly linked list.
    */
-  struct ChunkHeader {
+  struct alignas(default_alignement) ChunkHeader {
     size_t capacity; //!< Capacity of the chunk in bytes (excluding the header itself).
     size_t size; //!< Current size of allocated memory in bytes.
     ChunkHeader* next; //!< Next chunk in the linked list.
   };
 
-  struct SharedData {
+  struct alignas(default_alignement) SharedData {
     ChunkHeader* chunkHead; //!< Head of the chunk linked-list. Only the head chunk serves allocation.
     BaseAllocator* ownBaseAllocator; //!< base allocator created by this object.
     size_t refcount;
     bool ownBuffer;
   };
 
-  static constexpr std::size_t default_alignement = 8;
-  static constexpr std::size_t SIZEOF_SHARED_DATA = fst::aligned_size<default_alignement, SharedData>();
-  static constexpr std::size_t SIZEOF_CHUNK_HEADER = fst::aligned_size<default_alignement, ChunkHeader>();
-  static constexpr std::size_t default_chunk_capacity
-      = RAPIDJSON_ALLOCATOR_DEFAULT_CHUNK_CAPACITY; //!< Default chunk capacity.
-
   static inline ChunkHeader* GetChunkHead(SharedData* shared) {
-    return reinterpret_cast<ChunkHeader*>(reinterpret_cast<uint8_t*>(shared) + SIZEOF_SHARED_DATA);
+    return reinterpret_cast<ChunkHeader*>(reinterpret_cast<std::uint8_t*>(shared) + sizeof(SharedData));
   }
 
-  static inline uint8_t* GetChunkBuffer(SharedData* shared) {
-    return reinterpret_cast<uint8_t*>(shared->chunkHead) + SIZEOF_CHUNK_HEADER;
+  static inline std::uint8_t* GetChunkBuffer(SharedData* shared) {
+    return reinterpret_cast<std::uint8_t*>(shared->chunkHead) + sizeof(ChunkHeader);
   }
 
 public:
@@ -138,11 +131,11 @@ public:
   /*! \param chunkSize The size of memory chunk. The default is kDefaultChunkSize.
       \param baseAllocator The allocator for allocating memory chunks.
   */
-  explicit memory_pool_allocator(size_t chunkSize = default_chunk_capacity, BaseAllocator* baseAllocator = 0)
+  explicit memory_pool_allocator(std::size_t chunkSize = default_chunk_capacity, BaseAllocator* baseAllocator = 0)
       : chunk_capacity_(chunkSize)
       , baseAllocator_(baseAllocator ? baseAllocator : RAPIDJSON_NEW(BaseAllocator)())
       , shared_(static_cast<SharedData*>(
-            baseAllocator_ ? baseAllocator_->allocate(SIZEOF_SHARED_DATA + SIZEOF_CHUNK_HEADER) : 0)) {
+            baseAllocator_ ? baseAllocator_->allocate(sizeof(SharedData) + sizeof(ChunkHeader)) : 0)) {
 
     fst_assert(baseAllocator_ != 0, "");
     fst_assert(shared_ != 0, "");
@@ -170,15 +163,15 @@ public:
       \param baseAllocator The allocator for allocating memory chunks.
   */
   memory_pool_allocator(
-      void* buffer, size_t size, size_t chunkSize = default_chunk_capacity, BaseAllocator* baseAllocator = 0)
+      void* buffer, std::size_t size, std::size_t chunkSize = default_chunk_capacity, BaseAllocator* baseAllocator = 0)
       : chunk_capacity_(chunkSize)
       , baseAllocator_(baseAllocator)
       , shared_(static_cast<SharedData*>(AlignBuffer(buffer, size))) {
 
-    fst_assert(size >= SIZEOF_SHARED_DATA + SIZEOF_CHUNK_HEADER, "");
+    fst_assert(size >= sizeof(SharedData) + sizeof(ChunkHeader), "");
 
     shared_->chunkHead = GetChunkHead(shared_);
-    shared_->chunkHead->capacity = size - SIZEOF_SHARED_DATA - SIZEOF_CHUNK_HEADER;
+    shared_->chunkHead->capacity = size - sizeof(SharedData) - sizeof(ChunkHeader);
     shared_->chunkHead->size = 0;
     shared_->chunkHead->next = 0;
     shared_->ownBaseAllocator = 0;
@@ -225,7 +218,7 @@ public:
   //! Destructor.
   /*! This deallocates all memory chunks, excluding the user-supplied buffer.
    */
-  ~memory_pool_allocator() noexcept {
+  inline ~memory_pool_allocator() noexcept {
     if (!shared_) {
       // do nothing if moved
       return;
@@ -263,9 +256,9 @@ public:
   //! Computes the total capacity of allocated memory chunks.
   /*! \return total capacity in bytes.
    */
-  size_t Capacity() const noexcept {
+  std::size_t Capacity() const noexcept {
     fst_noexcept_assert(shared_->refcount > 0, "");
-    size_t capacity = 0;
+    std::size_t capacity = 0;
     for (ChunkHeader* c = shared_->chunkHead; c != 0; c = c->next) {
       capacity += c->capacity;
     }
@@ -275,9 +268,9 @@ public:
   //! Computes the memory blocks allocated.
   /*! \return total used bytes.
    */
-  size_t Size() const noexcept {
+  std::size_t Size() const noexcept {
     fst_noexcept_assert(shared_->refcount > 0, "");
-    size_t size = 0;
+    std::size_t size = 0;
     for (ChunkHeader* c = shared_->chunkHead; c != 0; c = c->next) {
       size += c->size;
     }
@@ -293,7 +286,7 @@ public:
   }
 
   //! Allocates a memory block. (concept Allocator)
-  void* allocate(size_t size) {
+  void* allocate(std::size_t size) {
     fst_noexcept_assert(shared_->refcount > 0, "");
 
     if (!size) {
@@ -313,7 +306,7 @@ public:
   }
 
   //! Resizes a memory block (concept Allocator)
-  void* realloc(void* originalPtr, size_t originalSize, size_t newSize) {
+  void* realloc(void* originalPtr, std::size_t originalSize, std::size_t newSize) {
     if (originalPtr == 0) {
       return allocate(newSize);
     }
@@ -333,7 +326,7 @@ public:
 
     // Simply expand it if it is the last allocation and there is sufficient space
     if (originalPtr == GetChunkBuffer(shared_) + shared_->chunkHead->size - originalSize) {
-      size_t increment = static_cast<size_t>(newSize - originalSize);
+      std::size_t increment = static_cast<std::size_t>(newSize - originalSize);
       if (shared_->chunkHead->size + increment <= shared_->chunkHead->capacity) {
         shared_->chunkHead->size += increment;
         return originalPtr;
@@ -368,10 +361,12 @@ private:
   /*! \param capacity Capacity of the chunk in bytes.
       \return true if success.
   */
-  bool AddChunk(size_t capacity) {
-    if (!baseAllocator_)
+  bool AddChunk(std::size_t capacity) {
+    if (!baseAllocator_) {
       shared_->ownBaseAllocator = baseAllocator_ = RAPIDJSON_NEW(BaseAllocator)();
-    if (ChunkHeader* chunk = static_cast<ChunkHeader*>(baseAllocator_->allocate(SIZEOF_CHUNK_HEADER + capacity))) {
+    }
+
+    if (ChunkHeader* chunk = static_cast<ChunkHeader*>(baseAllocator_->allocate(sizeof(SharedData) + capacity))) {
       chunk->capacity = capacity;
       chunk->size = 0;
       chunk->next = shared_->chunkHead;
@@ -382,7 +377,7 @@ private:
     return false;
   }
 
-  static inline void* AlignBuffer(void* buf, size_t& size) {
+  static inline void* AlignBuffer(void* buf, std::size_t& size) {
     fst_noexcept_assert(buf != 0, "");
     const uintptr_t mask = sizeof(void*) - 1;
     const uintptr_t ubuf = reinterpret_cast<uintptr_t>(buf);
@@ -396,7 +391,7 @@ private:
     return buf;
   }
 
-  size_t chunk_capacity_; //!< The minimum capacity of chunk when they are allocated.
+  std::size_t chunk_capacity_; //!< The minimum capacity of chunk when they are allocated.
   BaseAllocator* baseAllocator_; //!< base allocator for allocating memory chunks.
   SharedData* shared_; //!< The shared data of the allocator
 };
