@@ -123,8 +123,8 @@ namespace detail {
 /// @note implements Allocator concept
 ///
 template <typename BaseAllocator = crt_allocator>
-class memory_pool_allocator { //}: private detail::memory_pool_base<BaseAllocator> {
-
+class memory_pool_allocator : private detail::memory_pool_base<BaseAllocator> {
+  using base = detail::memory_pool_base<BaseAllocator>;
   static constexpr std::size_t default_alignement = 8;
   static constexpr std::size_t default_chunk_capacity = 64 * 1024;
   static constexpr bool is_base_empty = std::is_empty_v<BaseAllocator>;
@@ -177,10 +177,17 @@ public:
     //      , baseAllocator_(baseAllocator ? baseAllocator : RAPIDJSON_NEW(BaseAllocator)())
     //      , shared_(static_cast<shared_data*>(baseAllocator_ ? baseAllocator_->allocate(minimum_content_size) : 0)) {
 
-    baseAllocator_ = baseAllocator ? baseAllocator : RAPIDJSON_NEW(BaseAllocator)();
-    shared_ = static_cast<shared_data*>(baseAllocator_ ? baseAllocator_->allocate(minimum_content_size) : 0);
+    if constexpr (is_base_empty) {
+      shared_ = static_cast<shared_data*>(BaseAllocator().allocate(minimum_content_size));
+    }
+    else {
+      base::baseAllocator_ = baseAllocator ? baseAllocator : RAPIDJSON_NEW(BaseAllocator)();
+      shared_
+          = static_cast<shared_data*>(base::baseAllocator_ ? base::baseAllocator_->allocate(minimum_content_size) : 0);
 
-    fst_assert(baseAllocator_ != 0, "");
+      fst_assert(base::baseAllocator_ != 0, "");
+    }
+
     fst_assert(shared_ != 0, "");
 
     if constexpr (!is_base_empty) {
@@ -188,7 +195,7 @@ public:
         shared_->ownBaseAllocator = 0;
       }
       else {
-        shared_->ownBaseAllocator = baseAllocator_;
+        shared_->ownBaseAllocator = base::baseAllocator_;
       }
     }
 
@@ -213,7 +220,9 @@ public:
       //      , baseAllocator_(baseAllocator)
       , shared_(static_cast<shared_data*>(AlignBuffer(buffer, size))) {
 
-    baseAllocator_ = baseAllocator;
+    if constexpr (!is_base_empty) {
+      base::baseAllocator_ = baseAllocator;
+    }
 
     fst_assert(size >= minimum_content_size, "");
 
@@ -233,7 +242,9 @@ public:
       //      , baseAllocator_(rhs.baseAllocator_)
       , shared_(rhs.shared_) {
 
-    baseAllocator_ = rhs.baseAllocator_;
+    if constexpr (!is_base_empty) {
+      base::baseAllocator_ = rhs.baseAllocator_;
+    }
 
     fst_noexcept_assert(shared_->refcount > 0, "");
     ++shared_->refcount;
@@ -243,7 +254,9 @@ public:
     fst_noexcept_assert(rhs.shared_->refcount > 0, "");
     ++rhs.shared_->refcount;
     this->~memory_pool_allocator();
-    baseAllocator_ = rhs.baseAllocator_;
+    if constexpr (!is_base_empty) {
+      base::baseAllocator_ = rhs.baseAllocator_;
+    }
     chunk_capacity_ = rhs.chunk_capacity_;
     shared_ = rhs.shared_;
     return *this;
@@ -254,7 +267,9 @@ public:
       //      , baseAllocator_(rhs.baseAllocator_)
       , shared_(rhs.shared_) {
 
-    baseAllocator_ = rhs.baseAllocator_;
+    if constexpr (!is_base_empty) {
+      base::baseAllocator_ = rhs.baseAllocator_;
+    }
 
     fst_noexcept_assert(rhs.shared_->refcount > 0, "");
     rhs.shared_ = 0;
@@ -263,7 +278,9 @@ public:
   memory_pool_allocator& operator=(memory_pool_allocator&& rhs) noexcept {
     fst_noexcept_assert(rhs.shared_->refcount > 0, "");
     this->~memory_pool_allocator();
-    baseAllocator_ = rhs.baseAllocator_;
+    if constexpr (!is_base_empty) {
+      base::baseAllocator_ = rhs.baseAllocator_;
+    }
     chunk_capacity_ = rhs.chunk_capacity_;
     shared_ = rhs.shared_;
     rhs.shared_ = 0;
@@ -287,13 +304,13 @@ public:
     if constexpr (!is_base_empty) {
       BaseAllocator* a = shared_->ownBaseAllocator;
       if (shared_->ownBuffer) {
-        baseAllocator_->free(shared_);
+        base::baseAllocator_->free(shared_);
       }
       RAPIDJSON_DELETE(a);
     }
     else {
       if (shared_->ownBuffer) {
-        baseAllocator_->free(shared_);
+        BaseAllocator().free(shared_);
       }
     }
 
@@ -314,7 +331,14 @@ public:
         break;
       }
       shared_->chunkHead = c->next;
-      baseAllocator_->free(c);
+
+      if constexpr (is_base_empty) {
+        BaseAllocator().free(c);
+      }
+      else {
+        base::baseAllocator_->free(c);
+      }
+      //      baseAllocator_->free(c);
     }
 
     shared_->chunkHead->size = 0;
@@ -427,23 +451,49 @@ private:
   /// @param capacity Capacity of the chunk in bytes.
   /// @return true if success.
   bool AddChunk(std::size_t capacity) {
-    if (!baseAllocator_) {
-      if constexpr (is_base_empty) {
-        baseAllocator_ = RAPIDJSON_NEW(BaseAllocator)();
+    if constexpr (is_base_empty) {
+      if (chunk_header* chunk = static_cast<chunk_header*>(BaseAllocator().allocate(sizeof(shared_data) + capacity))) {
+        chunk->capacity = capacity;
+        chunk->size = 0;
+        chunk->next = shared_->chunkHead;
+        shared_->chunkHead = chunk;
+        return true;
       }
-      else {
-        shared_->ownBaseAllocator = baseAllocator_ = RAPIDJSON_NEW(BaseAllocator)();
+    }
+    else {
+
+      if (!base::baseAllocator_) {
+        shared_->ownBaseAllocator = base::baseAllocator_ = RAPIDJSON_NEW(BaseAllocator)();
       }
-      //      shared_->ownBaseAllocator = baseAllocator_ = RAPIDJSON_NEW(BaseAllocator)();
+
+      if (chunk_header* chunk
+          = static_cast<chunk_header*>(base::baseAllocator_->allocate(sizeof(shared_data) + capacity))) {
+        chunk->capacity = capacity;
+        chunk->size = 0;
+        chunk->next = shared_->chunkHead;
+        shared_->chunkHead = chunk;
+        return true;
+      }
     }
 
-    if (chunk_header* chunk = static_cast<chunk_header*>(baseAllocator_->allocate(sizeof(shared_data) + capacity))) {
-      chunk->capacity = capacity;
-      chunk->size = 0;
-      chunk->next = shared_->chunkHead;
-      shared_->chunkHead = chunk;
-      return true;
-    }
+    //    if (!baseAllocator_) {
+    //      if constexpr (is_base_empty) {
+    //        baseAllocator_ = RAPIDJSON_NEW(BaseAllocator)();
+    //      }
+    //      else {
+    //        shared_->ownBaseAllocator = baseAllocator_ = RAPIDJSON_NEW(BaseAllocator)();
+    //      }
+    //      //      shared_->ownBaseAllocator = baseAllocator_ = RAPIDJSON_NEW(BaseAllocator)();
+    //    }
+
+    //    if (chunk_header* chunk = static_cast<chunk_header*>(baseAllocator_->allocate(sizeof(shared_data) +
+    //    capacity))) {
+    //      chunk->capacity = capacity;
+    //      chunk->size = 0;
+    //      chunk->next = shared_->chunkHead;
+    //      shared_->chunkHead = chunk;
+    //      return true;
+    //    }
 
     return false;
   }
@@ -466,7 +516,7 @@ private:
   std::size_t chunk_capacity_;
 
   /// base allocator for allocating memory chunks.
-  BaseAllocator* baseAllocator_;
+  //  BaseAllocator* baseAllocator_;
 
   /// The shared data of the allocator.
   shared_data* shared_;
