@@ -33,6 +33,7 @@
 
 #pragma once
 #include <fst/config>
+#include <fst/math>
 
 // clang-format off
 #if __FST_UNISTD__
@@ -50,7 +51,24 @@
 #endif
 // clang-format on
 
+namespace fst {
+
+template <std::size_t N>
+inline constexpr std::size_t aligned_size(std::size_t size) {
+  static_assert(fst::math::is_power_of_two(N), "N must be a power of two.");
+  return (size + (N - 1)) & ~(N - 1);
+}
+
+template <std::size_t N, typename T>
+inline constexpr std::size_t aligned_size() {
+  static_assert(fst::math::is_power_of_two(N), "N must be a power of two.");
+  return (sizeof(T) + (N - 1)) & ~(N - 1);
+}
+
+} // namespace fst.
+
 namespace fst::memory {
+
 namespace detail {
 //
 // get_page_size.

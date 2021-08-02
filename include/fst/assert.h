@@ -41,11 +41,13 @@
 #if __FST_RELEASE_BUILD__
   namespace fst::config { inline constexpr bool has_assert = false; }
   #define fst_assert(Expr, Msg) ;
+  #define fst_noexcept_assert(Expr, Msg) ;
   #define fst_error(Msg) ;
 
 #else
   namespace fst::config { inline constexpr bool has_assert = true; }
   #define fst_assert(Expr, Msg) fst::assert_detail::custom_assert(#Expr, Expr, __FILE__, __LINE__, Msg)
+  #define fst_noexcept_assert(Expr, Msg) fst::assert_detail::custom_assert(#Expr, Expr, __FILE__, __LINE__, Msg)
   #define fst_error(Msg) fst::assert_detail::custom_error(__FILE__, __LINE__, Msg)
 #endif // __FST_RELEASE_BUILD__.
 

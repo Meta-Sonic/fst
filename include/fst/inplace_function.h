@@ -78,6 +78,7 @@ namespace inplace_function_detail {
 
   template <size_t Cap, size_t Align = alignof(aligned_storage_helper<Cap>)>
   using aligned_storage_t = typename aligned_storage<Cap, Align>::type;
+
   static_assert(sizeof(aligned_storage_t<sizeof(void*)>) == sizeof(void*), "A");
   static_assert(alignof(aligned_storage_t<sizeof(void*)>) == alignof(void*), "B");
 
