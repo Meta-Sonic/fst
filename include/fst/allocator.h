@@ -427,13 +427,13 @@ inline void Free(A& a, T* p, size_t n = 1) {
   static_cast<void>(Realloc<T, A>(a, p, n, 0));
 }
 
-template <typename T, typename BaseAllocator = crt_allocator>
+template <typename T, typename _BaseAllocator = crt_allocator>
 class allocator : public std::allocator<T> {
   using allocator_type = std::allocator<T>;
   using traits_type = std::allocator_traits<allocator_type>;
 
 public:
-  typedef BaseAllocator BaseAllocatorType;
+  using base_allocator_type = _BaseAllocator;
   using propagate_on_container_move_assignment = std::true_type;
   using propagate_on_container_swap = std::true_type;
 
@@ -447,11 +447,11 @@ public:
   using reference = std::add_lvalue_reference_t<value_type>&;
   using const_reference = std::add_lvalue_reference_t<std::add_const_t<value_type>>&;
 
-  using is_always_equal = std::is_empty<BaseAllocator>;
+  using is_always_equal = std::is_empty<base_allocator_type>;
 
   /// rapidjson Allocator concept
-  static constexpr bool need_free = BaseAllocator::need_free;
-  static constexpr bool is_ref_counted = internal::IsRefCounted<BaseAllocator>::value;
+  static constexpr bool need_free = base_allocator_type::need_free;
+  static constexpr bool is_ref_counted = internal::IsRefCounted<base_allocator_type>::value;
 
   allocator() noexcept = default;
 
@@ -460,7 +460,7 @@ public:
       , baseAllocator_(rhs.baseAllocator_) {}
 
   template <typename U>
-  allocator(const allocator<U, BaseAllocator>& rhs) noexcept
+  allocator(const allocator<U, base_allocator_type>& rhs) noexcept
       : allocator_type(rhs)
       , baseAllocator_(rhs.baseAllocator_) {}
 
@@ -469,7 +469,7 @@ public:
       , baseAllocator_(std::move(rhs.baseAllocator_)) {}
 
   /// implicit.
-  allocator(const BaseAllocator& allocator) noexcept
+  allocator(const base_allocator_type& allocator) noexcept
       : allocator_type()
       , baseAllocator_(allocator) {}
 
@@ -477,7 +477,7 @@ public:
 
   template <typename U>
   struct rebind {
-    typedef allocator<U, BaseAllocator> other;
+    using other = allocator<U, base_allocator_type>;
   };
 
   inline pointer address(reference r) const noexcept { return std::addressof(r); }
@@ -506,12 +506,12 @@ public:
   inline void deallocate(pointer p, size_type n = 1) { deallocate<value_type>(p, n); }
 
   template <typename U>
-  inline bool operator==(const allocator<U, BaseAllocator>& rhs) const noexcept {
+  inline bool operator==(const allocator<U, base_allocator_type>& rhs) const noexcept {
     return baseAllocator_ == rhs.baseAllocator_;
   }
 
   template <typename U>
-  inline bool operator!=(const allocator<U, BaseAllocator>& rhs) const noexcept {
+  inline bool operator!=(const allocator<U, base_allocator_type>& rhs) const noexcept {
     return !operator==(rhs);
   }
 
@@ -521,13 +521,13 @@ public:
     return baseAllocator_.realloc(originalPtr, originalSize, newSize);
   }
 
-  static void Free(void* ptr) noexcept { BaseAllocator::Free(ptr); }
+  static void Free(void* ptr) noexcept { base_allocator_type::Free(ptr); }
 
 private:
   template <typename, typename>
-  friend class allocator; // access to StdAllocator<!T>.*
+  friend class allocator; // access to allocator<!T>.*
 
-  BaseAllocator baseAllocator_;
+  base_allocator_type baseAllocator_;
 };
 
 } // namespace fst.
