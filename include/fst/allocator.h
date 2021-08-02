@@ -93,7 +93,23 @@ namespace detail {
   template <typename _BaseAllocator>
   using shared_data_base = std::conditional_t<std::is_empty_v<_BaseAllocator>, empty_shared_data_base,
       shared_data_base_impl<_BaseAllocator>>;
+
+  template <typename _BaseAllocator>
+  struct memory_pool_base_impl {
+    _BaseAllocator* baseAllocator_;
+
+    static constexpr bool is_empty = false;
+  };
+
+  struct empty_memory_pool_base {
+    static constexpr bool is_empty = true;
+  };
+
+  template <typename _BaseAllocator>
+  using memory_pool_base = std::conditional_t<std::is_empty_v<_BaseAllocator>, empty_memory_pool_base,
+      memory_pool_base_impl<_BaseAllocator>>;
 } // namespace detail.
+
 /// MemoryPoolAllocator
 ///
 /// Default memory allocator used by the parser and DOM.
@@ -107,7 +123,7 @@ namespace detail {
 /// @note implements Allocator concept
 ///
 template <typename BaseAllocator = crt_allocator>
-class memory_pool_allocator {
+class memory_pool_allocator { //}: private detail::memory_pool_base<BaseAllocator> {
 
   static constexpr std::size_t default_alignement = 8;
   static constexpr std::size_t default_chunk_capacity = 64 * 1024;
@@ -156,9 +172,13 @@ public:
   /// @param chunkSize The size of memory chunk. The default is kDefaultChunkSize.
   /// @param baseAllocator The allocator for allocating memory chunks.
   explicit memory_pool_allocator(std::size_t chunkSize = default_chunk_capacity, BaseAllocator* baseAllocator = 0)
-      : chunk_capacity_(chunkSize)
-      , baseAllocator_(baseAllocator ? baseAllocator : RAPIDJSON_NEW(BaseAllocator)())
-      , shared_(static_cast<shared_data*>(baseAllocator_ ? baseAllocator_->allocate(minimum_content_size) : 0)) {
+      : chunk_capacity_(chunkSize) {
+
+    //      , baseAllocator_(baseAllocator ? baseAllocator : RAPIDJSON_NEW(BaseAllocator)())
+    //      , shared_(static_cast<shared_data*>(baseAllocator_ ? baseAllocator_->allocate(minimum_content_size) : 0)) {
+
+    baseAllocator_ = baseAllocator ? baseAllocator : RAPIDJSON_NEW(BaseAllocator)();
+    shared_ = static_cast<shared_data*>(baseAllocator_ ? baseAllocator_->allocate(minimum_content_size) : 0);
 
     fst_assert(baseAllocator_ != 0, "");
     fst_assert(shared_ != 0, "");
@@ -190,8 +210,10 @@ public:
   memory_pool_allocator(
       void* buffer, std::size_t size, std::size_t chunkSize = default_chunk_capacity, BaseAllocator* baseAllocator = 0)
       : chunk_capacity_(chunkSize)
-      , baseAllocator_(baseAllocator)
+      //      , baseAllocator_(baseAllocator)
       , shared_(static_cast<shared_data*>(AlignBuffer(buffer, size))) {
+
+    baseAllocator_ = baseAllocator;
 
     fst_assert(size >= minimum_content_size, "");
 
@@ -208,8 +230,11 @@ public:
 
   memory_pool_allocator(const memory_pool_allocator& rhs) noexcept
       : chunk_capacity_(rhs.chunk_capacity_)
-      , baseAllocator_(rhs.baseAllocator_)
+      //      , baseAllocator_(rhs.baseAllocator_)
       , shared_(rhs.shared_) {
+
+    baseAllocator_ = rhs.baseAllocator_;
+
     fst_noexcept_assert(shared_->refcount > 0, "");
     ++shared_->refcount;
   }
@@ -226,8 +251,11 @@ public:
 
   memory_pool_allocator(memory_pool_allocator&& rhs) noexcept
       : chunk_capacity_(rhs.chunk_capacity_)
-      , baseAllocator_(rhs.baseAllocator_)
+      //      , baseAllocator_(rhs.baseAllocator_)
       , shared_(rhs.shared_) {
+
+    baseAllocator_ = rhs.baseAllocator_;
+
     fst_noexcept_assert(rhs.shared_->refcount > 0, "");
     rhs.shared_ = 0;
   }
