@@ -35,6 +35,7 @@
 #include <fst/assert>
 #include <fst/unused>
 #include <fst/memory>
+#include <fst/traits>
 
 #include <memory>
 #include <type_traits>
@@ -43,6 +44,7 @@
 #define RAPIDJSON_NEW(TypeName) new TypeName
 #define RAPIDJSON_DELETE(x) delete x
 
+// https://github.com/Tencent/rapidjson/blob/master/include/rapidjson/allocators.h
 namespace fst {
 struct default_allocator {
   inline static void* malloc(std::size_t size) { return std::malloc(size); }
@@ -50,10 +52,9 @@ struct default_allocator {
   inline static void free(void* ptr) { std::free(ptr); }
 };
 
-//! C-runtime library allocator.
-/*! This class is just wrapper for standard C library memory routines.
-    \note implements Allocator concept
-*/
+/// C-runtime library allocator.
+/// This class is just wrapper for standard C library memory routines.
+/// @note implements Allocator concept
 class crt_allocator {
 public:
   static constexpr bool need_free = true;
@@ -77,47 +78,52 @@ public:
   inline bool operator!=(const crt_allocator&) const noexcept { return false; }
 };
 
-///////////////////////////////////////////////////////////////////////////////
-// MemoryPoolAllocator
-
-//! Default memory allocator used by the parser and DOM.
-/*! This allocator allocate memory blocks from pre-allocated memory chunks.
-    It does not free memory blocks. And Realloc() only allocate new memory.
-    The memory chunks are allocated by BaseAllocator, which is CrtAllocator by default.
-    User may also supply a buffer as the first chunk.
-    If the user-buffer is full then additional chunks are allocated by BaseAllocator.
-    The user-buffer is not deallocated by this allocator.
-    \tparam BaseAllocator the allocator type for allocating memory chunks. Default is CrtAllocator.
-    \note implements Allocator concept
-*/
+/// MemoryPoolAllocator
+///
+/// Default memory allocator used by the parser and DOM.
+/// This allocator allocate memory blocks from pre-allocated memory chunks.
+/// It does not free memory blocks. And Realloc() only allocate new memory.
+/// The memory chunks are allocated by BaseAllocator, which is CrtAllocator by default.
+/// User may also supply a buffer as the first chunk.
+/// If the user-buffer is full then additional chunks are allocated by BaseAllocator.
+/// The user-buffer is not deallocated by this allocator.
+/// @tparam BaseAllocator the allocator type for allocating memory chunks. Default is CrtAllocator.
+/// @note implements Allocator concept
+///
 template <typename BaseAllocator = crt_allocator>
 class memory_pool_allocator {
 
   static constexpr std::size_t default_alignement = 8;
   static constexpr std::size_t default_chunk_capacity = 64 * 1024;
 
-  //! Chunk header for perpending to each chunk.
-  /*! Chunks are stored as a singly linked list.
-   */
-  struct alignas(default_alignement) ChunkHeader {
-    size_t capacity; //!< Capacity of the chunk in bytes (excluding the header itself).
-    size_t size; //!< Current size of allocated memory in bytes.
-    ChunkHeader* next; //!< Next chunk in the linked list.
+  /// Chunk header for perpending to each chunk.
+  /// Chunks are stored as a singly linked list.
+  ///
+  struct alignas(default_alignement) chunk_header {
+    /// Capacity of the chunk in bytes (excluding the header itself).
+    std::size_t capacity;
+    /// Current size of allocated memory in bytes.
+    std::size_t size;
+    /// Next chunk in the linked list.
+    chunk_header* next;
   };
 
-  struct alignas(default_alignement) SharedData {
-    ChunkHeader* chunkHead; //!< Head of the chunk linked-list. Only the head chunk serves allocation.
-    BaseAllocator* ownBaseAllocator; //!< base allocator created by this object.
-    size_t refcount;
+  struct alignas(default_alignement) shared_data {
+    /// Head of the chunk linked-list. Only the head chunk serves allocation.
+    chunk_header* chunkHead;
+
+    /// base allocator created by this object.
+    BaseAllocator* ownBaseAllocator;
+    std::size_t refcount;
     bool ownBuffer;
   };
 
-  static inline ChunkHeader* GetChunkHead(SharedData* shared) {
-    return reinterpret_cast<ChunkHeader*>(reinterpret_cast<std::uint8_t*>(shared) + sizeof(SharedData));
+  static inline chunk_header* GetChunkHead(shared_data* shared) {
+    return reinterpret_cast<chunk_header*>(reinterpret_cast<std::uint8_t*>(shared) + sizeof(shared_data));
   }
 
-  static inline std::uint8_t* GetChunkBuffer(SharedData* shared) {
-    return reinterpret_cast<std::uint8_t*>(shared->chunkHead) + sizeof(ChunkHeader);
+  static inline std::uint8_t* GetChunkBuffer(shared_data* shared) {
+    return reinterpret_cast<std::uint8_t*>(shared->chunkHead) + sizeof(chunk_header);
   }
 
 public:
@@ -127,15 +133,15 @@ public:
   /// Tell users that this allocator is reference counted on copy.
   static constexpr bool is_ref_counted = true;
 
-  //! Constructor with chunkSize.
-  /*! \param chunkSize The size of memory chunk. The default is kDefaultChunkSize.
-      \param baseAllocator The allocator for allocating memory chunks.
-  */
+  static constexpr std::size_t minimum_content_size = sizeof(shared_data) + sizeof(chunk_header);
+
+  /// Constructor with chunkSize.
+  /// @param chunkSize The size of memory chunk. The default is kDefaultChunkSize.
+  /// @param baseAllocator The allocator for allocating memory chunks.
   explicit memory_pool_allocator(std::size_t chunkSize = default_chunk_capacity, BaseAllocator* baseAllocator = 0)
       : chunk_capacity_(chunkSize)
       , baseAllocator_(baseAllocator ? baseAllocator : RAPIDJSON_NEW(BaseAllocator)())
-      , shared_(static_cast<SharedData*>(
-            baseAllocator_ ? baseAllocator_->allocate(sizeof(SharedData) + sizeof(ChunkHeader)) : 0)) {
+      , shared_(static_cast<shared_data*>(baseAllocator_ ? baseAllocator_->allocate(minimum_content_size) : 0)) {
 
     fst_assert(baseAllocator_ != 0, "");
     fst_assert(shared_ != 0, "");
@@ -154,24 +160,23 @@ public:
     shared_->refcount = 1;
   }
 
-  //! Constructor with user-supplied buffer.
-  /*! The user buffer will be used firstly. When it is full, memory pool allocates new chunk with chunk size.
-      The user buffer will not be deallocated when this allocator is destructed.
-      \param buffer User supplied buffer.
-      \param size Size of the buffer in bytes. It must at least larger than sizeof(ChunkHeader).
-      \param chunkSize The size of memory chunk. The default is kDefaultChunkSize.
-      \param baseAllocator The allocator for allocating memory chunks.
-  */
+  /// Constructor with user-supplied buffer.
+  /// The user buffer will be used firstly. When it is full, memory pool allocates new chunk with chunk size.
+  /// The user buffer will not be deallocated when this allocator is destructed.
+  /// @param buffer User supplied buffer.
+  /// @param size Size of the buffer in bytes. It must at least larger than sizeof(ChunkHeader).
+  /// @param chunkSize The size of memory chunk. The default is kDefaultChunkSize.
+  /// @param baseAllocator The allocator for allocating memory chunks.
   memory_pool_allocator(
       void* buffer, std::size_t size, std::size_t chunkSize = default_chunk_capacity, BaseAllocator* baseAllocator = 0)
       : chunk_capacity_(chunkSize)
       , baseAllocator_(baseAllocator)
-      , shared_(static_cast<SharedData*>(AlignBuffer(buffer, size))) {
+      , shared_(static_cast<shared_data*>(AlignBuffer(buffer, size))) {
 
-    fst_assert(size >= sizeof(SharedData) + sizeof(ChunkHeader), "");
+    fst_assert(size >= minimum_content_size, "");
 
     shared_->chunkHead = GetChunkHead(shared_);
-    shared_->chunkHead->capacity = size - sizeof(SharedData) - sizeof(ChunkHeader);
+    shared_->chunkHead->capacity = size - minimum_content_size;
     shared_->chunkHead->size = 0;
     shared_->chunkHead->next = 0;
     shared_->ownBaseAllocator = 0;
@@ -215,9 +220,8 @@ public:
     return *this;
   }
 
-  //! Destructor.
-  /*! This deallocates all memory chunks, excluding the user-supplied buffer.
-   */
+  /// Destructor.
+  /// This deallocates all memory chunks, excluding the user-supplied buffer.
   inline ~memory_pool_allocator() noexcept {
     if (!shared_) {
       // do nothing if moved
@@ -237,12 +241,12 @@ public:
     RAPIDJSON_DELETE(a);
   }
 
-  //! Deallocates all memory chunks, excluding the first/user one.
+  /// Deallocates all memory chunks, excluding the first/user one.
   void clear() noexcept {
     fst_noexcept_assert(shared_->refcount > 0, "");
 
     for (;;) {
-      ChunkHeader* c = shared_->chunkHead;
+      chunk_header* c = shared_->chunkHead;
       if (!c->next) {
         break;
       }
@@ -253,39 +257,36 @@ public:
     shared_->chunkHead->size = 0;
   }
 
-  //! Computes the total capacity of allocated memory chunks.
-  /*! \return total capacity in bytes.
-   */
+  /// Computes the total capacity of allocated memory chunks.
+  /// @return total capacity in bytes.
   std::size_t Capacity() const noexcept {
     fst_noexcept_assert(shared_->refcount > 0, "");
     std::size_t capacity = 0;
-    for (ChunkHeader* c = shared_->chunkHead; c != 0; c = c->next) {
+    for (chunk_header* c = shared_->chunkHead; c != 0; c = c->next) {
       capacity += c->capacity;
     }
     return capacity;
   }
 
-  //! Computes the memory blocks allocated.
-  /*! \return total used bytes.
-   */
+  /// Computes the memory blocks allocated.
+  /// @return total used bytes.
   std::size_t Size() const noexcept {
     fst_noexcept_assert(shared_->refcount > 0, "");
     std::size_t size = 0;
-    for (ChunkHeader* c = shared_->chunkHead; c != 0; c = c->next) {
+    for (chunk_header* c = shared_->chunkHead; c != 0; c = c->next) {
       size += c->size;
     }
     return size;
   }
 
-  //! Whether the allocator is shared.
-  /*! \return true or false.
-   */
+  /// Whether the allocator is shared.
+  /// @return true or false.
   bool Shared() const noexcept {
     fst_noexcept_assert(shared_->refcount > 0, "");
     return shared_->refcount > 1;
   }
 
-  //! Allocates a memory block. (concept Allocator)
+  /// Allocates a memory block. (concept Allocator)
   void* allocate(std::size_t size) {
     fst_noexcept_assert(shared_->refcount > 0, "");
 
@@ -305,7 +306,7 @@ public:
     return buffer;
   }
 
-  //! Resizes a memory block (concept Allocator)
+  /// Resizes a memory block (concept Allocator)
   void* realloc(void* originalPtr, std::size_t originalSize, std::size_t newSize) {
     if (originalPtr == 0) {
       return allocate(newSize);
@@ -344,29 +345,30 @@ public:
     return nullptr;
   }
 
-  //! Frees a memory block (concept Allocator)
-  inline static void free(void* ptr) noexcept { fst::unused(ptr); } // Do nothing
+  /// Frees a memory block (concept Allocator)
+  /// Does nothing.
+  inline static void free(void* ptr) noexcept { fst::unused(ptr); }
 
-  //! Compare (equality) with another MemoryPoolAllocator
+  /// Compare (equality) with another memory_pool_allocator
   inline bool operator==(const memory_pool_allocator& rhs) const noexcept {
     fst_noexcept_assert(shared_->refcount > 0, "");
     fst_noexcept_assert(rhs.shared_->refcount > 0, "");
     return shared_ == rhs.shared_;
   }
-  //! Compare (inequality) with another MemoryPoolAllocator
+
+  /// Compare (inequality) with another memory_pool_allocator
   inline bool operator!=(const memory_pool_allocator& rhs) const noexcept { return !operator==(rhs); }
 
 private:
-  //! Creates a new chunk.
-  /*! \param capacity Capacity of the chunk in bytes.
-      \return true if success.
-  */
+  /// Creates a new chunk.
+  /// @param capacity Capacity of the chunk in bytes.
+  /// @return true if success.
   bool AddChunk(std::size_t capacity) {
     if (!baseAllocator_) {
       shared_->ownBaseAllocator = baseAllocator_ = RAPIDJSON_NEW(BaseAllocator)();
     }
 
-    if (ChunkHeader* chunk = static_cast<ChunkHeader*>(baseAllocator_->allocate(sizeof(SharedData) + capacity))) {
+    if (chunk_header* chunk = static_cast<chunk_header*>(baseAllocator_->allocate(sizeof(shared_data) + capacity))) {
       chunk->capacity = capacity;
       chunk->size = 0;
       chunk->next = shared_->chunkHead;
@@ -379,11 +381,11 @@ private:
 
   static inline void* AlignBuffer(void* buf, std::size_t& size) {
     fst_noexcept_assert(buf != 0, "");
-    const uintptr_t mask = sizeof(void*) - 1;
-    const uintptr_t ubuf = reinterpret_cast<uintptr_t>(buf);
+    const std::uintptr_t mask = sizeof(void*) - 1;
+    const std::uintptr_t ubuf = reinterpret_cast<std::uintptr_t>(buf);
 
     if (FST_UNLIKELY(ubuf & mask)) {
-      const uintptr_t abuf = (ubuf + mask) & ~mask;
+      const std::uintptr_t abuf = (ubuf + mask) & ~mask;
       fst_noexcept_assert(size >= abuf - ubuf, "");
       buf = reinterpret_cast<void*>(abuf);
       size -= abuf - ubuf;
@@ -391,8 +393,143 @@ private:
     return buf;
   }
 
-  std::size_t chunk_capacity_; //!< The minimum capacity of chunk when they are allocated.
-  BaseAllocator* baseAllocator_; //!< base allocator for allocating memory chunks.
-  SharedData* shared_; //!< The shared data of the allocator
+  /// The minimum capacity of chunk when they are allocated.
+  std::size_t chunk_capacity_;
+
+  /// base allocator for allocating memory chunks.
+  BaseAllocator* baseAllocator_;
+
+  /// The shared data of the allocator.
+  shared_data* shared_;
 };
+
+namespace internal {
+  template <typename, typename = void>
+  struct IsRefCounted : public std::false_type {};
+
+  template <typename T>
+  struct IsRefCounted<T, typename fst::enable_if_cond<T::is_ref_counted>::type> : public std::true_type {};
+} // namespace internal
+
+template <typename T, typename A>
+inline T* Realloc(A& a, T* old_p, size_t old_n, size_t new_n) {
+  fst_noexcept_assert(old_n <= SIZE_MAX / sizeof(T) && new_n <= SIZE_MAX / sizeof(T), "");
+  return static_cast<T*>(a.realloc(old_p, old_n * sizeof(T), new_n * sizeof(T)));
+}
+
+template <typename T, typename A>
+inline T* Malloc(A& a, size_t n = 1) {
+  return Realloc<T, A>(a, NULL, 0, n);
+}
+
+template <typename T, typename A>
+inline void Free(A& a, T* p, size_t n = 1) {
+  static_cast<void>(Realloc<T, A>(a, p, n, 0));
+}
+
+template <typename T, typename BaseAllocator = crt_allocator>
+class StdAllocator : public std::allocator<T> {
+  using allocator_type = std::allocator<T>;
+  using traits_type = std::allocator_traits<allocator_type>;
+
+public:
+  typedef BaseAllocator BaseAllocatorType;
+  using propagate_on_container_move_assignment = std::true_type;
+  using propagate_on_container_swap = std::true_type;
+
+  typedef typename traits_type::size_type size_type;
+  typedef typename traits_type::difference_type difference_type;
+
+  typedef typename traits_type::value_type value_type;
+  typedef typename traits_type::pointer pointer;
+  typedef typename traits_type::const_pointer const_pointer;
+
+  typedef typename std::add_lvalue_reference<value_type>::type& reference;
+  typedef typename std::add_lvalue_reference<typename std::add_const<value_type>::type>::type& const_reference;
+  using is_always_equal = std::is_empty<BaseAllocator>;
+
+  /// rapidjson Allocator concept
+  static constexpr bool need_free = BaseAllocator::need_free;
+  static constexpr bool is_ref_counted = internal::IsRefCounted<BaseAllocator>::value;
+
+  StdAllocator() noexcept
+      : allocator_type()
+      , baseAllocator_() {}
+
+  StdAllocator(const StdAllocator& rhs) noexcept
+      : allocator_type(rhs)
+      , baseAllocator_(rhs.baseAllocator_) {}
+
+  template <typename U>
+  StdAllocator(const StdAllocator<U, BaseAllocator>& rhs) noexcept
+      : allocator_type(rhs)
+      , baseAllocator_(rhs.baseAllocator_) {}
+
+  StdAllocator(StdAllocator&& rhs) noexcept
+      : allocator_type(std::move(rhs))
+      , baseAllocator_(std::move(rhs.baseAllocator_)) {}
+
+  /// implicit.
+  StdAllocator(const BaseAllocator& allocator) noexcept
+      : allocator_type()
+      , baseAllocator_(allocator) {}
+
+  ~StdAllocator() noexcept {}
+
+  template <typename U>
+  struct rebind {
+    typedef StdAllocator<U, BaseAllocator> other;
+  };
+
+  pointer address(reference r) const noexcept { return std::addressof(r); }
+  const_pointer address(const_reference r) const noexcept { return std::addressof(r); }
+
+  size_type max_size() const noexcept { return traits_type::max_size(*this); }
+
+  template <typename... Args>
+  void construct(pointer p, Args&&... args) {
+    traits_type::construct(*this, p, std::forward<Args>(args)...);
+  }
+
+  void destroy(pointer p) { traits_type::destroy(*this, p); }
+
+  template <typename U>
+  U* allocate(size_type n = 1, const void* = 0) {
+    return fst::Malloc<U>(baseAllocator_, n);
+  }
+
+  template <typename U>
+  void deallocate(U* p, size_type n = 1) {
+    fst::Free<U>(baseAllocator_, p, n);
+  }
+
+  pointer allocate(size_type n = 1, const void* = 0) { return allocate<value_type>(n); }
+
+  void deallocate(pointer p, size_type n = 1) { deallocate<value_type>(p, n); }
+
+  template <typename U>
+  bool operator==(const StdAllocator<U, BaseAllocator>& rhs) const noexcept {
+    return baseAllocator_ == rhs.baseAllocator_;
+  }
+
+  template <typename U>
+  bool operator!=(const StdAllocator<U, BaseAllocator>& rhs) const noexcept {
+    return !operator==(rhs);
+  }
+
+  void* Malloc(size_t size) { return baseAllocator_.allocate(size); }
+
+  void* Realloc(void* originalPtr, size_t originalSize, size_t newSize) {
+    return baseAllocator_.realloc(originalPtr, originalSize, newSize);
+  }
+
+  static void Free(void* ptr) noexcept { BaseAllocator::Free(ptr); }
+
+private:
+  template <typename, typename>
+  friend class StdAllocator; // access to StdAllocator<!T>.*
+
+  BaseAllocator baseAllocator_;
+};
+
 } // namespace fst.

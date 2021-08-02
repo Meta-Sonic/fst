@@ -130,6 +130,22 @@ struct type_identity {
   using type = _Tp;
 };
 
+template <bool Condition, typename T = void>
+struct enable_if_cond {
+  typedef T type;
+};
+template <typename T>
+struct enable_if_cond<false, T> { /* empty */
+};
+
+template <bool Condition, typename T = void>
+struct disable_if_cond {
+  typedef T type;
+};
+template <typename T>
+struct disable_if_cond<true, T> { /* empty */
+};
+
 template <class _Tp, bool>
 struct dependent_type : public _Tp {};
 
