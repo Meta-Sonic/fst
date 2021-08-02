@@ -76,6 +76,8 @@ public:
 
   inline bool operator==(const crt_allocator&) const noexcept { return true; }
   inline bool operator!=(const crt_allocator&) const noexcept { return false; }
+
+  //  int a;
 };
 
 namespace detail {
@@ -96,6 +98,16 @@ namespace detail {
 
   template <typename _BaseAllocator>
   struct memory_pool_base_impl {
+    memory_pool_base_impl() = default;
+    memory_pool_base_impl(_BaseAllocator* b)
+        : baseAllocator_(b) {}
+
+    memory_pool_base_impl(const memory_pool_base_impl&) = default;
+    memory_pool_base_impl(memory_pool_base_impl&&) = default;
+
+    memory_pool_base_impl& operator=(const memory_pool_base_impl&) = default;
+    memory_pool_base_impl& operator=(memory_pool_base_impl&&) = default;
+
     _BaseAllocator* baseAllocator_;
 
     static constexpr bool is_empty = false;
@@ -127,7 +139,11 @@ class memory_pool_allocator : private detail::memory_pool_base<BaseAllocator> {
   using base = detail::memory_pool_base<BaseAllocator>;
   static constexpr std::size_t default_alignement = 8;
   static constexpr std::size_t default_chunk_capacity = 64 * 1024;
-  static constexpr bool is_base_empty = std::is_empty_v<BaseAllocator>;
+
+  //  using base_empty = std::is_empty<BaseAllocator>;
+  using base_empty = std::bool_constant<std::is_empty_v<BaseAllocator>>;
+  static constexpr bool is_base_empty = base_empty::value;
+  using base_not_empty = std::bool_constant<!is_base_empty>;
 
   /// Chunk header for perpending to each chunk.
   /// Chunks are stored as a singly linked list.
@@ -159,6 +175,12 @@ class memory_pool_allocator : private detail::memory_pool_base<BaseAllocator> {
     return reinterpret_cast<std::uint8_t*>(shared->chunkHead) + sizeof(chunk_header);
   }
 
+  template <bool _Dummy, class _D = dependent_type_condition<_Dummy, base_empty>>
+  using enable_if_has_empty_base = enable_if_same<_Dummy, _D>;
+
+  template <bool _Dummy, class _D = dependent_type_condition<_Dummy, base_not_empty>>
+  using enable_if_has_base = enable_if_same<_Dummy, _D>;
+
 public:
   /// Tell users that no need to call Free() with this allocator. (concept Allocator)
   static constexpr bool need_free = false;
@@ -171,34 +193,31 @@ public:
   /// Constructor with chunkSize.
   /// @param chunkSize The size of memory chunk. The default is kDefaultChunkSize.
   /// @param baseAllocator The allocator for allocating memory chunks.
-  explicit memory_pool_allocator(std::size_t chunkSize = default_chunk_capacity, BaseAllocator* baseAllocator = 0)
-      : chunk_capacity_(chunkSize) {
-
-    //      , baseAllocator_(baseAllocator ? baseAllocator : RAPIDJSON_NEW(BaseAllocator)())
-    //      , shared_(static_cast<shared_data*>(baseAllocator_ ? baseAllocator_->allocate(minimum_content_size) : 0)) {
-
-    if constexpr (is_base_empty) {
-      shared_ = static_cast<shared_data*>(BaseAllocator().allocate(minimum_content_size));
-    }
-    else {
-      base::baseAllocator_ = baseAllocator ? baseAllocator : RAPIDJSON_NEW(BaseAllocator)();
-      shared_
-          = static_cast<shared_data*>(base::baseAllocator_ ? base::baseAllocator_->allocate(minimum_content_size) : 0);
-
-      fst_assert(base::baseAllocator_ != 0, "");
-    }
+  template <bool _Dummy = true, class = enable_if_has_empty_base<_Dummy>>
+  explicit memory_pool_allocator(std::size_t chunkSize = default_chunk_capacity)
+      : chunk_capacity_(chunkSize)
+      , shared_(static_cast<shared_data*>(BaseAllocator().allocate(minimum_content_size))) {
 
     fst_assert(shared_ != 0, "");
+    shared_->chunkHead = GetChunkHead(shared_);
+    shared_->chunkHead->capacity = 0;
+    shared_->chunkHead->size = 0;
+    shared_->chunkHead->next = 0;
+    shared_->ownBuffer = true;
+    shared_->refcount = 1;
+  }
 
-    if constexpr (!is_base_empty) {
-      if (baseAllocator) {
-        shared_->ownBaseAllocator = 0;
-      }
-      else {
-        shared_->ownBaseAllocator = base::baseAllocator_;
-      }
-    }
+  template <bool _Dummy = true, class = enable_if_has_base<_Dummy>>
+  explicit memory_pool_allocator(std::size_t chunkSize = default_chunk_capacity, BaseAllocator* baseAllocator = nullptr)
+      : base(baseAllocator ? baseAllocator : RAPIDJSON_NEW(BaseAllocator)())
+      , chunk_capacity_(chunkSize)
+      , shared_(static_cast<shared_data*>(
+            base::baseAllocator_ ? base::baseAllocator_->allocate(minimum_content_size) : 0)) {
 
+    fst_assert(base::baseAllocator_ != 0, "");
+    fst_assert(shared_ != 0, "");
+
+    shared_->ownBaseAllocator = baseAllocator ? 0 : base::baseAllocator_;
     shared_->chunkHead = GetChunkHead(shared_);
     shared_->chunkHead->capacity = 0;
     shared_->chunkHead->size = 0;
@@ -214,15 +233,12 @@ public:
   /// @param size Size of the buffer in bytes. It must at least larger than sizeof(ChunkHeader).
   /// @param chunkSize The size of memory chunk. The default is kDefaultChunkSize.
   /// @param baseAllocator The allocator for allocating memory chunks.
-  memory_pool_allocator(
-      void* buffer, std::size_t size, std::size_t chunkSize = default_chunk_capacity, BaseAllocator* baseAllocator = 0)
+
+  template <bool _Dummy = true, class = enable_if_has_empty_base<_Dummy>>
+  memory_pool_allocator(void* buffer, std::size_t size, std::size_t chunkSize = default_chunk_capacity)
       : chunk_capacity_(chunkSize)
       //      , baseAllocator_(baseAllocator)
       , shared_(static_cast<shared_data*>(AlignBuffer(buffer, size))) {
-
-    if constexpr (!is_base_empty) {
-      base::baseAllocator_ = baseAllocator;
-    }
 
     fst_assert(size >= minimum_content_size, "");
 
@@ -230,12 +246,57 @@ public:
     shared_->chunkHead->capacity = size - minimum_content_size;
     shared_->chunkHead->size = 0;
     shared_->chunkHead->next = 0;
-    if constexpr (!is_base_empty) {
-      shared_->ownBaseAllocator = 0;
-    }
     shared_->ownBuffer = false;
     shared_->refcount = 1;
   }
+
+  template <bool _Dummy = true, class = enable_if_has_base<_Dummy>>
+  memory_pool_allocator(
+      void* buffer, std::size_t size, std::size_t chunkSize = default_chunk_capacity, BaseAllocator* baseAllocator = 0)
+      : base(baseAllocator)
+      , chunk_capacity_(chunkSize)
+      //      , baseAllocator_(baseAllocator)
+      , shared_(static_cast<shared_data*>(AlignBuffer(buffer, size))) {
+
+    //    if constexpr (!is_base_empty) {
+    //      base::baseAllocator_ = baseAllocator;
+    //    }
+
+    fst_assert(size >= minimum_content_size, "");
+
+    shared_->chunkHead = GetChunkHead(shared_);
+    shared_->chunkHead->capacity = size - minimum_content_size;
+    shared_->chunkHead->size = 0;
+    shared_->chunkHead->next = 0;
+    //    if constexpr (!is_base_empty) {
+    shared_->ownBaseAllocator = 0;
+    //    }
+    shared_->ownBuffer = false;
+    shared_->refcount = 1;
+  }
+
+  //  memory_pool_allocator(
+  //      void* buffer, std::size_t size, std::size_t chunkSize = default_chunk_capacity, BaseAllocator* baseAllocator =
+  //      0) : chunk_capacity_(chunkSize)
+  //      //      , baseAllocator_(baseAllocator)
+  //      , shared_(static_cast<shared_data*>(AlignBuffer(buffer, size))) {
+  //
+  //    if constexpr (!is_base_empty) {
+  //      base::baseAllocator_ = baseAllocator;
+  //    }
+  //
+  //    fst_assert(size >= minimum_content_size, "");
+  //
+  //    shared_->chunkHead = GetChunkHead(shared_);
+  //    shared_->chunkHead->capacity = size - minimum_content_size;
+  //    shared_->chunkHead->size = 0;
+  //    shared_->chunkHead->next = 0;
+  //    if constexpr (!is_base_empty) {
+  //      shared_->ownBaseAllocator = 0;
+  //    }
+  //    shared_->ownBuffer = false;
+  //    shared_->refcount = 1;
+  //  }
 
   memory_pool_allocator(const memory_pool_allocator& rhs) noexcept
       : chunk_capacity_(rhs.chunk_capacity_)
