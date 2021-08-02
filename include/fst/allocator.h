@@ -78,6 +78,22 @@ public:
   inline bool operator!=(const crt_allocator&) const noexcept { return false; }
 };
 
+namespace detail {
+  template <typename _BaseAllocator>
+  struct shared_data_base_impl {
+    _BaseAllocator* ownBaseAllocator;
+
+    static constexpr bool is_empty = false;
+  };
+
+  struct empty_shared_data_base {
+    static constexpr bool is_empty = true;
+  };
+
+  template <typename _BaseAllocator>
+  using shared_data_base = std::conditional_t<std::is_empty_v<_BaseAllocator>, empty_shared_data_base,
+      shared_data_base_impl<_BaseAllocator>>;
+} // namespace detail.
 /// MemoryPoolAllocator
 ///
 /// Default memory allocator used by the parser and DOM.
@@ -95,6 +111,7 @@ class memory_pool_allocator {
 
   static constexpr std::size_t default_alignement = 8;
   static constexpr std::size_t default_chunk_capacity = 64 * 1024;
+  static constexpr bool is_base_empty = std::is_empty_v<BaseAllocator>;
 
   /// Chunk header for perpending to each chunk.
   /// Chunks are stored as a singly linked list.
@@ -108,12 +125,12 @@ class memory_pool_allocator {
     chunk_header* next;
   };
 
-  struct alignas(default_alignement) shared_data {
+  struct alignas(default_alignement) shared_data : detail::shared_data_base<BaseAllocator> {
     /// Head of the chunk linked-list. Only the head chunk serves allocation.
     chunk_header* chunkHead;
 
     /// base allocator created by this object.
-    BaseAllocator* ownBaseAllocator;
+    //    BaseAllocator* ownBaseAllocator;
     std::size_t refcount;
     bool ownBuffer;
   };
@@ -146,12 +163,15 @@ public:
     fst_assert(baseAllocator_ != 0, "");
     fst_assert(shared_ != 0, "");
 
-    if (baseAllocator) {
-      shared_->ownBaseAllocator = 0;
+    if constexpr (!is_base_empty) {
+      if (baseAllocator) {
+        shared_->ownBaseAllocator = 0;
+      }
+      else {
+        shared_->ownBaseAllocator = baseAllocator_;
+      }
     }
-    else {
-      shared_->ownBaseAllocator = baseAllocator_;
-    }
+
     shared_->chunkHead = GetChunkHead(shared_);
     shared_->chunkHead->capacity = 0;
     shared_->chunkHead->size = 0;
@@ -179,7 +199,9 @@ public:
     shared_->chunkHead->capacity = size - minimum_content_size;
     shared_->chunkHead->size = 0;
     shared_->chunkHead->next = 0;
-    shared_->ownBaseAllocator = 0;
+    if constexpr (!is_base_empty) {
+      shared_->ownBaseAllocator = 0;
+    }
     shared_->ownBuffer = false;
     shared_->refcount = 1;
   }
@@ -234,11 +256,24 @@ public:
 
     clear();
 
-    BaseAllocator* a = shared_->ownBaseAllocator;
-    if (shared_->ownBuffer) {
-      baseAllocator_->free(shared_);
+    if constexpr (!is_base_empty) {
+      BaseAllocator* a = shared_->ownBaseAllocator;
+      if (shared_->ownBuffer) {
+        baseAllocator_->free(shared_);
+      }
+      RAPIDJSON_DELETE(a);
     }
-    RAPIDJSON_DELETE(a);
+    else {
+      if (shared_->ownBuffer) {
+        baseAllocator_->free(shared_);
+      }
+    }
+
+    //    BaseAllocator* a = shared_->ownBaseAllocator;
+    //    if (shared_->ownBuffer) {
+    //      baseAllocator_->free(shared_);
+    //    }
+    //    RAPIDJSON_DELETE(a);
   }
 
   /// Deallocates all memory chunks, excluding the first/user one.
@@ -365,7 +400,13 @@ private:
   /// @return true if success.
   bool AddChunk(std::size_t capacity) {
     if (!baseAllocator_) {
-      shared_->ownBaseAllocator = baseAllocator_ = RAPIDJSON_NEW(BaseAllocator)();
+      if constexpr (is_base_empty) {
+        baseAllocator_ = RAPIDJSON_NEW(BaseAllocator)();
+      }
+      else {
+        shared_->ownBaseAllocator = baseAllocator_ = RAPIDJSON_NEW(BaseAllocator)();
+      }
+      //      shared_->ownBaseAllocator = baseAllocator_ = RAPIDJSON_NEW(BaseAllocator)();
     }
 
     if (chunk_header* chunk = static_cast<chunk_header*>(baseAllocator_->allocate(sizeof(shared_data) + capacity))) {

@@ -55,4 +55,20 @@ TEST(allocator, std) {
   { std::vector<int, allocator_type> buffer((allocator_type(pool))); }
 }
 
+TEST(allocator, std2) {
+  //  using pool_allocator_type = fst::memory_pool_allocator<>;
+  using allocator_type = fst::allocator<int>;
+
+  //  constexpr std::size_t n_int = 64;
+  //  constexpr std::size_t data_size = n_int * sizeof(int) + pool_allocator_type::minimum_content_size;
+
+  //  std::array<std::uint8_t, data_size> data;
+  //  pool_allocator_type pool(data.data(), data.size());
+  std::vector<int, allocator_type> buffer;
+  buffer.resize(64);
+
+  for (std::size_t i = 0; i < buffer.size(); i++) {
+    buffer[i] = i;
+  }
+}
 } // namespace
