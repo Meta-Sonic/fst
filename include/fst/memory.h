@@ -34,6 +34,8 @@
 #pragma once
 #include <fst/config>
 #include <fst/math>
+#include <cstdlib>
+#include <memory>
 
 // clang-format off
 #if __FST_UNISTD__
@@ -65,6 +67,13 @@ inline constexpr std::size_t aligned_size() {
   return (sizeof(T) + (N - 1)) & ~(N - 1);
 }
 
+namespace memory {
+  // struct runtime_c_allocation {
+  inline void* malloc(std::size_t size) { return std::malloc(size); }
+  inline void* realloc(void* ptr, std::size_t new_size) { return std::realloc(ptr, new_size); }
+  inline void free(void* ptr) { std::free(ptr); }
+  //};
+} // namespace memory.
 } // namespace fst.
 
 namespace fst::memory {
