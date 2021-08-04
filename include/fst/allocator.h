@@ -36,6 +36,7 @@
 #include <fst/unused>
 #include <fst/memory>
 #include <fst/traits>
+#include <cstring>
 
 // https://github.com/Tencent/rapidjson/blob/master/include/rapidjson/allocators.h
 namespace fst {
