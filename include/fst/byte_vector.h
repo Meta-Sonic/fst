@@ -1,7 +1,7 @@
 ///
 /// BSD 3-Clause License
 ///
-/// Copyright (c) 2020, Alexandre Arsenault
+/// Copyright (c) 2021, Alexandre Arsenault
 /// All rights reserved.
 ///
 /// Redistribution and use in source and binary forms, with or without
@@ -184,10 +184,15 @@ namespace byte_vector_detail {
       }
     }
 
+    inline void write(const void* __data, std::size_t __size) {
+      _buffer.insert(_buffer.end(), (const value_type*)__data, (const value_type*)__data + __size);
+    }
+
     template <template <typename> typename _InputBufferType, bool _IsLittleEndian = true>
     inline void push_back(const byte_vector<_InputBufferType>& bvec) {
       static_assert(_IsLittleEndian, "byte_vector::push_back is not supported for big endian.");
-      insert<_IsLittleEndian>(end(), bvec.begin(), bvec.end());
+      insert(end(), bvec.begin(), bvec.end());
+      //      insert<_IsLittleEndian>(end(), bvec.begin(), bvec.end());
     }
 
     template <typename T, bool _IsLittleEndian = true>

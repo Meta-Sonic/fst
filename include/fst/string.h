@@ -36,6 +36,16 @@
 #include <string_view>
 
 namespace fst::string {
+inline std::size_t strnlen(const char* s, std::size_t max_len) {
+  std::size_t i = 0;
+  for (; (i < max_len) && s[i]; ++i)
+    ;
+  return i;
+}
+
+inline std::string_view to_string_view_n(const char* s, std::size_t max_len) {
+  return std::string_view(s, fst::string::strnlen(s, max_len));
+}
 
 inline constexpr bool is_upper_case(std::string_view s) {
   for (std::size_t i = 0; i < s.size(); i++) {
