@@ -394,7 +394,7 @@ public:
       return nullptr;
     }
 
-    size = fst::aligned_size<default_alignement>(size);
+    size = fst::memory::aligned_size<default_alignement>(size);
 
     if (FST_UNLIKELY(_shared->chunk_head->size + size > _shared->chunk_head->capacity))
       if (!AddChunk(chunk_capacity_ > size ? chunk_capacity_ : size)) {
@@ -417,8 +417,8 @@ public:
       return nullptr;
     }
 
-    originalSize = fst::aligned_size<default_alignement>(originalSize);
-    newSize = fst::aligned_size<default_alignement>(newSize);
+    originalSize = fst::memory::aligned_size<default_alignement>(originalSize);
+    newSize = fst::memory::aligned_size<default_alignement>(newSize);
 
     // Do not shrink if new size is smaller than original
     if (originalSize >= newSize) {

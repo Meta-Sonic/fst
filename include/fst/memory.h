@@ -44,16 +44,21 @@
 
 #if __FST_MACOS__
   #include <sys/sysctl.h>
+
 #elif __FST_WINDOWS__
   #include <stdlib.h>
   #include <windows.h>
   #include <sysinfoapi.h>
+
 #elif __FST_LINUX__
-  #include <stdio.h>
+  #include <cstdio>
 #endif
 // clang-format on
 
-namespace fst {
+namespace fst::memory {
+inline void* malloc(std::size_t size) { return std::malloc(size); }
+inline void* realloc(void* ptr, std::size_t new_size) { return std::realloc(ptr, new_size); }
+inline void free(void* ptr) { std::free(ptr); }
 
 template <std::size_t N>
 inline constexpr std::size_t aligned_size(std::size_t size) {
@@ -67,99 +72,102 @@ inline constexpr std::size_t aligned_size() {
   return (sizeof(T) + (N - 1)) & ~(N - 1);
 }
 
-namespace memory {
-  // struct runtime_c_allocation {
-  inline void* malloc(std::size_t size) { return std::malloc(size); }
-  inline void* realloc(void* ptr, std::size_t new_size) { return std::realloc(ptr, new_size); }
-  inline void free(void* ptr) { std::free(ptr); }
-  //};
-} // namespace memory.
-} // namespace fst.
-
-namespace fst::memory {
-
 namespace detail {
-//
-// get_page_size.
-//
+  inline constexpr std::size_t default_page_size = 4096;
+  inline constexpr std::size_t default_cache_size = 64;
+
+  /// get_page_size.
+  inline std::size_t get_page_size() {
 #if __FST_UNISTD__
-inline std::size_t get_page_size() {
-  long pagesize = sysconf(_SC_PAGE_SIZE);
-  return pagesize >= 0 ? (std::size_t)pagesize : 0;
-}
+    long pagesize = sysconf(_SC_PAGE_SIZE);
+    return pagesize >= 0 ? (std::size_t)pagesize : 0;
 
 #elif __FST_WINDOWS__
-  inline std::size_t get_page_size() {
     SYSTEM_INFO sys_info;
     GetSystemInfo(&sys_info);
     return sys_info.dwPageSize >= 0 ? (std::size_t)sys_info.dwPageSize : 0;
-  }
 
 #else
-inline std::size_t get_page_size() {
-  return 0;
-}
+    return default_page_size;
 #endif
+  }
 
-//
-// get_cache_size.
-//
-// https://stackoverflow.com/questions/794632/programmatically-get-the-cache-line-size
-
+  /// get_cache_size.
+  /// https://stackoverflow.com/questions/794632/programmatically-get-the-cache-line-size
+  inline std::size_t get_cache_size() {
 #if __FST_MACOS__
-inline std::size_t get_cache_size() {
-  size_t line_size = 0;
-  size_t sizeof_line_size = sizeof(line_size);
-  sysctlbyname("hw.cachelinesize", &line_size, &sizeof_line_size, 0, 0);
-  return line_size;
-}
+    std::size_t line_size = 0;
+    std::size_t sizeof_line_size = sizeof(line_size);
+    sysctlbyname("hw.cachelinesize", &line_size, &sizeof_line_size, 0, 0);
+    return line_size;
 
 #elif __FST_WINDOWS__
-  inline std::size_t get_cache_size() {
-    size_t line_size = 0;
     DWORD buffer_size = 0;
-    DWORD i = 0;
-    SYSTEM_LOGICAL_PROCESSOR_INFORMATION * buffer = 0;
 
-    GetLogicalProcessorInformation(0, &buffer_size);
-    buffer = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION *)malloc(buffer_size);
-    GetLogicalProcessorInformation(&buffer[0], &buffer_size);
-
-    for (i = 0; i != buffer_size / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION); ++i) {
-        if (buffer[i].Relationship == RelationCache && buffer[i].Cache.Level == 1) {
-            line_size = buffer[i].Cache.LineSize;
-            break;
-        }
+    if (!GetLogicalProcessorInformation(nullptr, &buffer_size)) {
+      return default_cache_size;
     }
 
-    free(buffer);
+    SYSTEM_LOGICAL_PROCESSOR_INFORMATION* buffer
+        = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION*)fst::memory::malloc(buffer_size);
+
+    if (!buffer) {
+      return default_cache_size;
+    }
+
+    if (!GetLogicalProcessorInformation(&buffer[0], &buffer_size)) {
+      fst::memory::free(buffer);
+      return default_cache_size;
+    }
+
+    std::size_t line_size = 0;
+    const std::size_t size = buffer_size / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
+
+    for (std::size_t i = 0; i < size; i++) {
+      if (buffer[i].Relationship == RelationCache && buffer[i].Cache.Level == 1) {
+        line_size = buffer[i].Cache.LineSize;
+        break;
+      }
+    }
+
+    //    for (i = 0; i != buffer_size / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION); ++i) {
+    //      if (buffer[i].Relationship == RelationCache && buffer[i].Cache.Level == 1) {
+    //        line_size = buffer[i].Cache.LineSize;
+    //        break;
+    //      }
+    //    }
+
+    fst::memory::free(buffer);
     return line_size;
-  }
 
 #elif __FST_LINUX__
-inline std::size_t get_cache_size() {
-  FILE* p = 0;
-  p = fopen("/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size", "r");
-  unsigned int i = 0;
-  if (p) {
-    fscanf(p, "%u", &i);
-    fclose(p);
-  }
-  return i;
-}
+    std::FILE* p = std::fopen("/sys/devices/system/cpu/cpu0/cache/index0/coherency_line_size", "r");
 
+    if (!p) {
+      return default_cache_size;
+    }
+
+    unsigned int i = 0;
+    bool is_valid = std::fscanf(p, "%u", &i) == 1;
+    std::fclose(p);
+
+    return is_valid ? (std::size_t)i : default_cache_size;
 #else
-#warning "Unsupported platform."
-  inline std::size_t get_cache_size() { return 0; }
+
+#warning "Unsupported platform for cache size."
+    return default_cache_size;
 #endif
+  }
 } // namespace detail.
 
 inline std::size_t get_page_size() {
+  // In C++11, the following is guaranteed to perform thread-safe initialisation.
   static std::size_t size = detail::get_page_size();
   return size;
 }
 
 inline std::size_t get_cache_size() {
+  // In C++11, the following is guaranteed to perform thread-safe initialisation.
   static std::size_t size = detail::get_cache_size();
   return size;
 }
