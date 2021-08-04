@@ -22,11 +22,11 @@ TEST(allocator, std) {
     buffer.resize(n_int);
 
     for (std::size_t i = 0; i < buffer.size(); i++) {
-      buffer[i] = i;
+      buffer[i] = (int)i;
     }
 
     for (std::size_t i = 0; i < buffer.size(); i++) {
-      EXPECT_EQ(i, buffer[i]);
+      EXPECT_EQ((int)i, buffer[i]);
     }
   }
 
@@ -40,7 +40,7 @@ TEST(allocator, std2) {
   buffer.resize(64);
 
   for (std::size_t i = 0; i < buffer.size(); i++) {
-    buffer[i] = i;
+    buffer[i] = (int)i;
   }
 }
 
@@ -57,7 +57,7 @@ TEST(allocator, std3) {
     buffer.resize(n_int);
 
     for (std::size_t i = 0; i < buffer.size(); i++) {
-      buffer[i] = i;
+      buffer[i] = (int)i;
     }
 
     for (std::size_t i = 0; i < buffer.size(); i++) {
@@ -86,8 +86,8 @@ TEST(allocator, std4) {
   buffer2.resize(64);
 
   for (std::size_t i = 0; i < buffer1.size(); i++) {
-    buffer1[i] = i;
-    buffer2[i] = i * 2;
+    buffer1[i] = (int)i;
+    buffer2[i] = (float)i * 2;
   }
 
   for (std::size_t i = 0; i < buffer1.size(); i++) {
