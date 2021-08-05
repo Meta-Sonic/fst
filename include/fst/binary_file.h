@@ -45,17 +45,18 @@
 #include <map>
 
 namespace fst::binary_file {
+inline constexpr std::size_t header_id_size = 4;
+inline constexpr std::size_t chunk_id_size = 8;
 
 namespace detail {
   struct chunk_info {
-    static constexpr std::size_t uid_size = 8;
+    static constexpr std::size_t uid_size = chunk_id_size;
     char uid[uid_size];
     std::uint32_t size;
-    std::uint32_t offset;
   };
 
   struct header {
-    static constexpr std::size_t uid_size = 4;
+    static constexpr std::size_t uid_size = header_id_size;
     char uid[uid_size];
     std::uint32_t n_chunk;
   };
@@ -106,6 +107,8 @@ public:
       return false;
     }
 
+    std::uint32_t offset = (std::uint32_t)(sizeof(detail::header) + h.n_chunk * sizeof(detail::chunk_info));
+
     for (std::size_t i = 0; i < h.n_chunk; i++) {
       std::size_t c_offset = detail::get_chunk_info_offset(i);
       if (c_offset + sizeof(detail::chunk_info) > bv.size()) {
@@ -118,12 +121,14 @@ public:
         continue;
       }
 
-      if (c->offset + c->size > bv.size()) {
+      if (offset + c->size > bv.size()) {
         return false;
       }
 
       _names.push_back(fst::string::to_string_view_n(c->uid, detail::chunk_info::uid_size));
-      _data.emplace_back(bv.data() + c->offset, c->size);
+      _data.emplace_back(bv.data() + offset, c->size);
+
+      offset += c->size;
     }
 
     return true;
@@ -162,7 +167,7 @@ private:
 /// Writer.
 class writer {
 public:
-  using string_type = fst::small_string<detail::chunk_info::uid_size>;
+  using string_type = fst::small_string<chunk_id_size>;
 
   inline bool add_chunk(const string_type& name, const fst::byte_vector& data) {
     // Make sure data is not empty.
@@ -237,7 +242,7 @@ public:
     return add_chunk_ref(name, fst::byte_view((const std::uint8_t*)&value, sizeof(T)));
   }
 
-  inline bool contains(const fst::small_string<8>& name) {
+  inline bool contains(const string_type& name) {
     for (const auto& n : _chunk_name) {
       if (n.name == name) {
         return true;
@@ -274,7 +279,7 @@ public:
 
 private:
   struct name_info {
-    fst::small_string<8> name;
+    string_type name;
 
     struct index_t {
       bool is_view : 1 = false;
@@ -296,7 +301,8 @@ private:
     detail::header h{ { 'f', 's', 't', 'b' }, (std::uint32_t)_chunk_name.size() };
     w.write((data_ptr_type)&h, (data_size_type)sizeof(detail::header));
 
-    std::uint32_t offset = (std::uint32_t)(sizeof(detail::header) + _chunk_name.size() * sizeof(detail::chunk_info));
+    //    std::uint32_t offset = (std::uint32_t)(sizeof(detail::header) + _chunk_name.size() *
+    //    sizeof(detail::chunk_info));
 
     for (std::size_t i = 0; i < _chunk_name.size(); i++) {
       detail::chunk_info c_info;
@@ -308,9 +314,9 @@ private:
           = _chunk_name[i].index.is_view ? _chunk_view[chunk_index].size() : _chunk_data[chunk_index].size();
 
       c_info.size = chunk_size;
-      c_info.offset = offset;
+      //      c_info.offset = offset;
 
-      offset += chunk_size;
+      //      offset += chunk_size;
 
       w.write((data_ptr_type)&c_info, (data_size_type)sizeof(detail::chunk_info));
     }
