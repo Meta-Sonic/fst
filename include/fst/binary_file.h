@@ -74,6 +74,7 @@ namespace detail {
 
 } // namespace detail.
 
+/// Loader.
 class loader {
 public:
   bool load(const std::filesystem::path& file_path) {
@@ -158,96 +159,93 @@ private:
   std::vector<fst::byte_view> _data;
 };
 
+/// Writer.
 class writer {
 public:
-  inline bool add_chunk(const fst::small_string<8>& name, const fst::byte_vector& data) {
-    if (contains(name)) {
-      return false;
-    }
+  using string_type = fst::small_string<detail::chunk_info::uid_size>;
 
+  inline bool add_chunk(const string_type& name, const fst::byte_vector& data) {
+    // Make sure data is not empty.
     if (data.empty()) {
       return false;
     }
 
-    _chunk_name.push_back(name);
+    // Make sure name doesn't already exist.
+    if (contains(name)) {
+      return false;
+    }
+
+    _chunk_name.push_back(name_info{ name, name_info::index_t{ false, (std::uint32_t)_chunk_data.size() } });
     _chunk_data.push_back(data);
     return true;
   }
 
-  inline bool add_chunk(const fst::small_string<8>& name, fst::byte_vector&& data) {
-    if (contains(name)) {
-      return false;
-    }
-
+  inline bool add_chunk(const string_type& name, fst::byte_vector&& data) {
+    // Make sure data is not empty.
     if (data.empty()) {
       return false;
     }
 
-    _chunk_name.push_back(name);
+    // Make sure name doesn't already exist.
+    if (contains(name)) {
+      return false;
+    }
+
+    _chunk_name.push_back(name_info{ name, name_info::index_t{ false, (std::uint32_t)_chunk_data.size() } });
     _chunk_data.push_back(std::move(data));
     return true;
   }
 
   template <typename T>
-  inline bool add_chunk(const fst::small_string<8>& name, const T& value) {
-    if (contains(name)) {
+  inline bool add_chunk(const string_type& name, const T& value) {
+    // Make sure data is not empty.
+    if (std::is_empty_v<T>) {
       return false;
     }
 
-    if (std::is_empty_v<T>) {
+    // Make sure name doesn't already exist.
+    if (contains(name)) {
       return false;
     }
 
     fst::byte_vector data;
     data.push_back(value);
 
-    _chunk_name.push_back(name);
+    _chunk_name.push_back(name_info{ name, name_info::index_t{ false, (std::uint32_t)_chunk_data.size() } });
     _chunk_data.push_back(std::move(data));
     return true;
   }
 
+  inline bool add_chunk_ref(const string_type& name, const fst::byte_view& data) {
+    // Make sure data is not empty.
+    if (data.empty()) {
+      return false;
+    }
+
+    // Make sure name doesn't already exist.
+    if (contains(name)) {
+      return false;
+    }
+
+    _chunk_name.push_back(name_info{ name, name_info::index_t{ true, (std::uint32_t)_chunk_view.size() } });
+    _chunk_view.push_back(data);
+    return true;
+  }
+
+  template <typename T>
+  inline bool add_chunk_ref(const string_type& name, const T& value) {
+    return add_chunk_ref(name, fst::byte_view((const std::uint8_t*)&value, sizeof(T)));
+  }
+
   inline bool contains(const fst::small_string<8>& name) {
     for (const auto& n : _chunk_name) {
-      if (n == name) {
+      if (n.name == name) {
         return true;
       }
     }
 
     return false;
   }
-
-  //  inline bool write_to_file(const std::filesystem::path& file_path) const {
-  //    std::ofstream output_file(file_path, std::ios::binary);
-  //    if (!output_file.is_open()) {
-  //      return false;
-  //    }
-  //
-  //    detail::header h{{'f', 's', 't', 'b'}, (std::uint32_t)_chunk_data.size()};
-  //    output_file.write((const char*)&h, sizeof(detail::header));
-  //
-  //    std::uint32_t offset = (std::uint32_t)(sizeof(detail::header) + _chunk_data.size() *
-  //    sizeof(detail::chunk_info));
-  //
-  //    for(std::size_t i = 0; i < _chunk_data.size(); i++) {
-  //      detail::chunk_info c_info;
-  //      std::memset((void*)&c_info.uid, 0, detail::chunk_info::uid_size);
-  //      std::memcpy((void*)&c_info.uid, _chunk_name[i].data(), _chunk_name[i].size());
-  //
-  //      c_info.size = _chunk_data[i].size();
-  //      c_info.offset = offset;
-  //
-  //      offset += _chunk_data[i].size();
-  //
-  //      output_file.write((const char*)&c_info, sizeof(detail::chunk_info));
-  //    }
-  //
-  //    for(std::size_t i = 0; i < _chunk_data.size(); i++) {
-  //      output_file.write((const char*)_chunk_data[i].data(), _chunk_data[i].size());
-  //    }
-  //
-  //    output_file.close();
-  //    return true;
-  //  }
 
   inline bool write_to_file(const std::filesystem::path& filepath) const {
     std::ofstream output_file(filepath, std::ios::binary);
@@ -264,7 +262,7 @@ public:
     return true;
   }
 
-  inline void write_to_buffer(fst::byte_vector& buffer) const {
+  inline bool write_to_buffer(fst::byte_vector& buffer) const {
     return internal_write<fst::byte_vector, const std::uint8_t*, std::size_t>(buffer);
   }
 
@@ -275,34 +273,57 @@ public:
   }
 
 private:
-  std::vector<fst::small_string<8>> _chunk_name;
+  struct name_info {
+    fst::small_string<8> name;
+
+    struct index_t {
+      bool is_view : 1 = false;
+      std::uint32_t index : 31 = 0;
+    };
+
+    index_t index;
+  };
+
+  std::vector<name_info> _chunk_name;
   std::vector<fst::byte_vector> _chunk_data;
+  std::vector<fst::byte_view> _chunk_view;
 
   template <typename _Writer, typename _DataPtrType = const char*, typename _DataSizeType = std::size_t>
   inline bool internal_write(_Writer& w) const {
     using data_ptr_type = _DataPtrType;
     using data_size_type = _DataSizeType;
 
-    detail::header h{ { 'f', 's', 't', 'b' }, (std::uint32_t)_chunk_data.size() };
+    detail::header h{ { 'f', 's', 't', 'b' }, (std::uint32_t)_chunk_name.size() };
     w.write((data_ptr_type)&h, (data_size_type)sizeof(detail::header));
 
-    std::uint32_t offset = (std::uint32_t)(sizeof(detail::header) + _chunk_data.size() * sizeof(detail::chunk_info));
+    std::uint32_t offset = (std::uint32_t)(sizeof(detail::header) + _chunk_name.size() * sizeof(detail::chunk_info));
 
-    for (std::size_t i = 0; i < _chunk_data.size(); i++) {
+    for (std::size_t i = 0; i < _chunk_name.size(); i++) {
       detail::chunk_info c_info;
       std::memset((void*)&c_info.uid, 0, detail::chunk_info::uid_size);
-      std::memcpy((void*)&c_info.uid, _chunk_name[i].data(), _chunk_name[i].size());
+      std::memcpy((void*)&c_info.uid, _chunk_name[i].name.data(), _chunk_name[i].name.size());
 
-      c_info.size = _chunk_data[i].size();
+      std::size_t chunk_index = _chunk_name[i].index.index;
+      std::size_t chunk_size
+          = _chunk_name[i].index.is_view ? _chunk_view[chunk_index].size() : _chunk_data[chunk_index].size();
+
+      c_info.size = chunk_size;
       c_info.offset = offset;
 
-      offset += _chunk_data[i].size();
+      offset += chunk_size;
 
       w.write((data_ptr_type)&c_info, (data_size_type)sizeof(detail::chunk_info));
     }
 
-    for (std::size_t i = 0; i < _chunk_data.size(); i++) {
-      w.write((data_ptr_type)_chunk_data[i].data(), (data_size_type)_chunk_data[i].size());
+    for (std::size_t i = 0; i < _chunk_name.size(); i++) {
+      std::size_t chunk_index = _chunk_name[i].index.index;
+
+      if (_chunk_name[i].index.is_view) {
+        w.write((data_ptr_type)_chunk_view[chunk_index].data(), (data_size_type)_chunk_view[chunk_index].size());
+      }
+      else {
+        w.write((data_ptr_type)_chunk_data[chunk_index].data(), (data_size_type)_chunk_data[chunk_index].size());
+      }
     }
 
     return true;

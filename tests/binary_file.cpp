@@ -51,4 +51,24 @@ TEST(binary_file, std) {
   EXPECT_TRUE(file_loader.load(std::filesystem::temp_directory_path() / "data_file.data"));
   check_loader(file_loader);
 }
+
+TEST(binary_file, view) {
+
+  abc a0 = { 0, 1, 2 };
+  abc a1 = { 3, 4, 5 };
+
+  fst::binary_file::writer w;
+  w.add_chunk("a0", a0);
+  w.add_chunk_ref("a1", a1);
+  //  w.add_view("a1", fst::byte_view((const std::uint8_t*)&a1, sizeof(abc)));
+  //
+  //  EXPECT_EQ(w.add_chunk("a1", a1), false);
+  //  EXPECT_EQ(w.add_chunk("a2", abcd{}), false);
+
+  fst::byte_vector data = w.write_to_buffer();
+
+  fst::binary_file::loader data_loader;
+  EXPECT_TRUE(data_loader.load(data));
+  check_loader(data_loader);
+}
 } // namespace
