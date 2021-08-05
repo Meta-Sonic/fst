@@ -1,64 +1,32 @@
 #include <fst/assert>
 #include <fst/print>
-#include <fst/binary_file.h>
+#include <fst/enum_error.h>
 
-struct abc {
-  int a, b, c;
-};
+enum class error_type { none, big_time, big_error };
 
-struct abcd {};
-
-void check_loader(fst::binary_file::loader& l) {
-  fst::byte_view bv0 = l.get_data("a0");
-  if (bv0.empty()) {
-    fst::errprint("Cound not load a0.");
-    return -1;
-  }
-
-  const abc& b0 = bv0.as_ref<abc>(0);
-  fst::print(b0.a, b0.b, b0.c);
-
-  fst::byte_view bv1 = l["a1"];
-  if (bv1.empty()) {
-    fst::errprint("Cound not load a1.");
-    return -1;
-  }
-
-  const abc& b1 = bv1.as_ref<abc>(0);
-  fst::print(b1.a, b1.b, b1.c);
-}
+inline fst::enum_error<error_type, error_type::none> check() { return error_type::big_error; }
 
 int main() {
-  abc a0 = { 0, 1, 2 };
-  abc a1 = { 3, 4, 12 };
-
-  fst::binary_file::writer w;
-  w.add_chunk("a0", a0);
-  w.add_chunk("a1", a1);
-
-  fst::print("ABCD", w.add_chunk("a2", abcd{}));
-
-  if (!w.write_to_file("/Users/alexarse/Desktop/data_file.data")) {
-    fst::errprint("Cound not write data.");
-    return -1;
+  if (auto res = check()) {
+    fst::print("HAS ERROR", (int)(error_type)res);
   }
 
-  fst::byte_vector data = w.write_to_buffer();
+  fst::enum_error<error_type, error_type::none> r(error_type::big_time);
 
-  fst::binary_file::loader data_loader;
-  if (!data_loader.load(data)) {
-    fst::errprint("Cound not load data.");
-    return -1;
+  if (r) {
+    fst::print("Has error 0.");
   }
 
-  check_loader(data_loader);
+  r = error_type::none;
 
-  fst::binary_file::loader file_loader;
-  if (!file_loader.load("/Users/alexarse/Desktop/data_file.data")) {
-    fst::errprint("Cound not load data.");
-    return -1;
+  if (r) {
+    fst::print("Has error 1.");
   }
 
-  check_loader(file_loader);
+  r = error_type::big_time;
+
+  if (r == error_type::big_time) {
+    fst::print("SAME good");
+  }
   return 0;
 }
