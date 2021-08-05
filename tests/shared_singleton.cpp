@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <string>
-#include "fst/common.h"
-#include "fst/shared_singleton.h"
+#include <fst/config>
+#include <fst/shared_singleton>
 
 namespace {
 

@@ -313,10 +313,7 @@ private:
       std::size_t chunk_size
           = _chunk_name[i].index.is_view ? _chunk_view[chunk_index].size() : _chunk_data[chunk_index].size();
 
-      c_info.size = chunk_size;
-      //      c_info.offset = offset;
-
-      //      offset += chunk_size;
+      c_info.size = (std::uint32_t)chunk_size;
 
       w.write((data_ptr_type)&c_info, (data_size_type)sizeof(detail::chunk_info));
     }

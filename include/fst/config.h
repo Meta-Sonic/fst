@@ -86,6 +86,10 @@
   #define __FST_USE_TRACE_INTERFACE__ 0
 #endif // FST_CONFIG_USE_TRACE.
 
+#define FST_BEGIN_WINDOWS_H <fst/detail/include_windows_begin.h>
+#define FST_END_WINDOWS_H <fst/detail/include_windows_end.h>
+#define FST_WINDOWS_H <fst/detail/include_windows.h>
+
 namespace fst::config {
 
   //

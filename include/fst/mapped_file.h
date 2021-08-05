@@ -44,16 +44,7 @@
 
 // clang-format off
 #if __FST_WINDOWS__
-  #define WIN32_LEAN_AND_MEAN
-  #include <windows.h>
-  
-  #ifdef max
-    #undef max
-  #endif
-
-  #ifdef min
-    #undef min
-  #endif
+  #include FST_WINDOWS_H
 
   #define __FST_MAPPED_FILE_USE_WINDOWS_MEMORY_MAP 1
   namespace fst::config { inline constexpr bool has_memory_map = true; }

@@ -32,19 +32,22 @@
 ///
 
 #pragma once
-#include "fst/common.h"
-#include "fst/assert.h"
+#include <fst/assert>
 #include <filesystem>
 
+// clang-format off
 #if __FST_MACOS__
-#include <pwd.h>
+  #include <pwd.h>
+
 #elif __FST_WINDOWS__
-#include <shlobj_core.h>
+  #include <shlobj_core.h>
+
 #elif __FST_LINUX__
-#include <unistd.h>
-#include <sys/types.h>
-#include <pwd.h>
+  #include <unistd.h>
+  #include <sys/types.h>
+  #include <pwd.h>
 #endif
+// clang-format on
 
 namespace fst {
 #if __FST_MACOS__

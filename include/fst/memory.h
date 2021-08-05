@@ -47,16 +47,9 @@
 
 #elif __FST_WINDOWS__
   #include <stdlib.h>
-  #include <windows.h>
+  #include FST_BEGIN_WINDOWS_H
   #include <sysinfoapi.h>
-  
-  #ifdef max
-    #undef max
-  #endif
-
-  #ifdef min
-    #undef min
-  #endif
+  #include FST_END_WINDOWS_H
 
 #elif __FST_LINUX__
   #include <cstdio>
