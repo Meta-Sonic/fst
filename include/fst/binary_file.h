@@ -34,6 +34,7 @@
 #pragma once
 #include <fst/byte_vector>
 #include <fst/byte_view>
+#include <fst/enum_error>
 #include <fst/mapped_file>
 #include <fst/small_string>
 #include <fst/string>
@@ -78,33 +79,37 @@ namespace detail {
 /// Loader.
 class loader {
 public:
-  bool load(const std::filesystem::path& file_path) {
+  enum class error_type { none, open_file, invalid_header, invalid_header_id, empty_chunk_size, wrong_chunk_size };
+
+  using error_t = fst::enum_error<error_type, error_type::none>;
+
+  error_t load(const std::filesystem::path& file_path) {
     _file.close();
 
     if (!_file.open(file_path)) {
-      return false;
+      return error_type::open_file;
     }
 
     if (!_file.is_valid()) {
-      return false;
+      return error_type::open_file;
     }
 
     if (_file.size() < sizeof(detail::header)) {
-      return false;
+      return error_type::invalid_header;
     }
 
     return load(fst::byte_view(_file.data(), _file.size()));
   }
 
-  bool load(const fst::byte_view& bv) {
+  error_t load(const fst::byte_view& bv) {
     const detail::header& h = bv.as_ref<detail::header>(0);
 
     if (fst::string::to_string_view_n(h.uid, detail::header::uid_size) != "fstb") {
-      return false;
+      return error_type::invalid_header_id;
     }
 
     if (h.n_chunk == 0) {
-      return false;
+      return error_type::empty_chunk_size;
     }
 
     std::uint32_t offset = (std::uint32_t)(sizeof(detail::header) + h.n_chunk * sizeof(detail::chunk_info));
@@ -112,7 +117,7 @@ public:
     for (std::size_t i = 0; i < h.n_chunk; i++) {
       std::size_t c_offset = detail::get_chunk_info_offset(i);
       if (c_offset + sizeof(detail::chunk_info) > bv.size()) {
-        return false;
+        return error_type::wrong_chunk_size;
       }
 
       const detail::chunk_info* c = detail::get_chunk_info_from_offset(&h, c_offset);
@@ -122,7 +127,7 @@ public:
       }
 
       if (offset + c->size > bv.size()) {
-        return false;
+        return error_type::wrong_chunk_size;
       }
 
       _names.push_back(fst::string::to_string_view_n(c->uid, detail::chunk_info::uid_size));
@@ -131,7 +136,7 @@ public:
       offset += c->size;
     }
 
-    return true;
+    return error_t();
   }
 
   inline fst::byte_view get_data(const std::string_view& name) const {
@@ -167,50 +172,60 @@ private:
 /// Writer.
 class writer {
 public:
+  enum class error_type {
+    none,
+    empty_data,
+    duplicate_name,
+
+    open_file_error,
+    write_error,
+  };
+
+  using error_t = fst::enum_error<error_type, error_type::none>;
   using string_type = fst::small_string<chunk_id_size>;
 
-  inline bool add_chunk(const string_type& name, const fst::byte_vector& data) {
+  inline error_t add_chunk(const string_type& name, const fst::byte_vector& data) {
     // Make sure data is not empty.
     if (data.empty()) {
-      return false;
+      return error_type::empty_data;
     }
 
     // Make sure name doesn't already exist.
     if (contains(name)) {
-      return false;
+      return error_type::duplicate_name;
     }
 
     _chunk_name.push_back(name_info{ name, name_info::index_t{ false, (std::uint32_t)_chunk_data.size() } });
     _chunk_data.push_back(data);
-    return true;
+    return error_t();
   }
 
-  inline bool add_chunk(const string_type& name, fst::byte_vector&& data) {
+  inline error_t add_chunk(const string_type& name, fst::byte_vector&& data) {
     // Make sure data is not empty.
     if (data.empty()) {
-      return false;
+      return error_type::empty_data;
     }
 
     // Make sure name doesn't already exist.
     if (contains(name)) {
-      return false;
+      return error_type::duplicate_name;
     }
 
     _chunk_name.push_back(name_info{ name, name_info::index_t{ false, (std::uint32_t)_chunk_data.size() } });
     _chunk_data.push_back(std::move(data));
-    return true;
+    return error_t();
   }
 
   template <typename T>
-  inline bool add_chunk(const string_type& name, const T& value) {
+  inline error_t add_chunk(const string_type& name, const T& value) {
     // Make sure data is not empty.
     if (std::is_empty_v<T>) {
-      return false;
+      return error_type::empty_data;
     }
 
     // Make sure name doesn't already exist.
     if (contains(name)) {
-      return false;
+      return error_type::duplicate_name;
     }
 
     fst::byte_vector data;
@@ -218,27 +233,27 @@ public:
 
     _chunk_name.push_back(name_info{ name, name_info::index_t{ false, (std::uint32_t)_chunk_data.size() } });
     _chunk_data.push_back(std::move(data));
-    return true;
+    return error_t();
   }
 
-  inline bool add_chunk_ref(const string_type& name, const fst::byte_view& data) {
+  inline error_t add_chunk_ref(const string_type& name, const fst::byte_view& data) {
     // Make sure data is not empty.
     if (data.empty()) {
-      return false;
+      return error_type::empty_data;
     }
 
     // Make sure name doesn't already exist.
     if (contains(name)) {
-      return false;
+      return error_type::duplicate_name;
     }
 
     _chunk_name.push_back(name_info{ name, name_info::index_t{ true, (std::uint32_t)_chunk_view.size() } });
     _chunk_view.push_back(data);
-    return true;
+    return error_t();
   }
 
   template <typename T>
-  inline bool add_chunk_ref(const string_type& name, const T& value) {
+  inline error_t add_chunk_ref(const string_type& name, const T& value) {
     return add_chunk_ref(name, fst::byte_view((const std::uint8_t*)&value, sizeof(T)));
   }
 
@@ -252,22 +267,18 @@ public:
     return false;
   }
 
-  inline bool write_to_file(const std::filesystem::path& filepath) const {
+  inline error_t write_to_file(const std::filesystem::path& filepath) const {
     std::ofstream output_file(filepath, std::ios::binary);
     if (!output_file.is_open()) {
-      return false;
+      return error_type::open_file_error;
     }
 
-    if (!internal_write<std::ofstream, const char*, std::streamsize>(output_file)) {
-      output_file.close();
-      return false;
-    }
-
+    error_t err = internal_write<std::ofstream, const char*, std::streamsize>(output_file);
     output_file.close();
-    return true;
+    return err;
   }
 
-  inline bool write_to_buffer(fst::byte_vector& buffer) const {
+  inline error_t write_to_buffer(fst::byte_vector& buffer) const {
     return internal_write<fst::byte_vector, const std::uint8_t*, std::size_t>(buffer);
   }
 
@@ -294,15 +305,12 @@ private:
   std::vector<fst::byte_view> _chunk_view;
 
   template <typename _Writer, typename _DataPtrType = const char*, typename _DataSizeType = std::size_t>
-  inline bool internal_write(_Writer& w) const {
+  inline error_t internal_write(_Writer& w) const {
     using data_ptr_type = _DataPtrType;
     using data_size_type = _DataSizeType;
 
     detail::header h{ { 'f', 's', 't', 'b' }, (std::uint32_t)_chunk_name.size() };
     w.write((data_ptr_type)&h, (data_size_type)sizeof(detail::header));
-
-    //    std::uint32_t offset = (std::uint32_t)(sizeof(detail::header) + _chunk_name.size() *
-    //    sizeof(detail::chunk_info));
 
     for (std::size_t i = 0; i < _chunk_name.size(); i++) {
       detail::chunk_info c_info;
@@ -329,7 +337,7 @@ private:
       }
     }
 
-    return true;
+    return error_t();
   }
 };
 } // namespace fst::binary_file.

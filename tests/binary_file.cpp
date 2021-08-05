@@ -36,19 +36,19 @@ TEST(binary_file, std) {
   w.add_chunk("a0", a0);
   w.add_chunk("a1", a1);
 
-  EXPECT_EQ(w.add_chunk("a1", a1), false);
-  EXPECT_EQ(w.add_chunk("a2", abcd{}), false);
+  EXPECT_EQ(w.add_chunk("a1", a1), fst::binary_file::writer::error_type::duplicate_name);
+  EXPECT_EQ(w.add_chunk("a2", abcd{}), fst::binary_file::writer::error_type::empty_data);
 
   fst::byte_vector data = w.write_to_buffer();
 
   fst::binary_file::loader data_loader;
-  EXPECT_TRUE(data_loader.load(data));
+  EXPECT_FALSE(data_loader.load(data));
   check_loader(data_loader);
 
-  EXPECT_TRUE(w.write_to_file(std::filesystem::temp_directory_path() / "data_file.data"));
+  EXPECT_FALSE(w.write_to_file(std::filesystem::temp_directory_path() / "data_file.data"));
 
   fst::binary_file::loader file_loader;
-  EXPECT_TRUE(file_loader.load(std::filesystem::temp_directory_path() / "data_file.data"));
+  EXPECT_FALSE(file_loader.load(std::filesystem::temp_directory_path() / "data_file.data"));
   check_loader(file_loader);
 }
 
@@ -68,7 +68,7 @@ TEST(binary_file, view) {
   fst::byte_vector data = w.write_to_buffer();
 
   fst::binary_file::loader data_loader;
-  EXPECT_TRUE(data_loader.load(data));
+  EXPECT_FALSE(data_loader.load(data));
   check_loader(data_loader);
 }
 } // namespace
