@@ -198,7 +198,7 @@ public:
 
   template <bool _Dummy = true, class = enable_if_has_base<_Dummy>>
   explicit memory_pool_allocator(std::size_t chunkSize = default_chunk_capacity, BaseAllocator* baseAllocator = nullptr)
-      : base(baseAllocator ? baseAllocator : new BaseAllocator)
+      : base(baseAllocator ? baseAllocator : fst::memory::__new<BaseAllocator>())
       , chunk_capacity_(chunkSize)
       , _shared(static_cast<shared_data*>(
             base::baseAllocator_ ? base::baseAllocator_->allocate(minimum_content_size) : 0)) {
@@ -326,7 +326,7 @@ public:
       if (_shared->own_buffer) {
         base::baseAllocator_->free(_shared);
       }
-      delete a;
+      fst::memory::__delete(a);
     }
     else {
       if (_shared->own_buffer) {
@@ -360,7 +360,7 @@ public:
 
   /// Computes the total capacity of allocated memory chunks.
   /// @return total capacity in bytes.
-  std::size_t Capacity() const noexcept {
+  std::size_t capacity() const noexcept {
     fst_noexcept_assert(_shared->refcount > 0, "");
     std::size_t capacity = 0;
     for (chunk_header* c = _shared->chunk_head; c != 0; c = c->next) {
@@ -371,7 +371,7 @@ public:
 
   /// Computes the memory blocks allocated.
   /// @return total used bytes.
-  std::size_t Size() const noexcept {
+  std::size_t size() const noexcept {
     fst_noexcept_assert(_shared->refcount > 0, "");
     std::size_t size = 0;
     for (chunk_header* c = _shared->chunk_head; c != 0; c = c->next) {
@@ -381,8 +381,7 @@ public:
   }
 
   /// Whether the allocator is shared.
-  /// @return true or false.
-  bool Shared() const noexcept {
+  bool is_shared() const noexcept {
     fst_noexcept_assert(_shared->refcount > 0, "");
     return _shared->refcount > 1;
   }
@@ -477,7 +476,7 @@ private:
     else {
 
       if (!base::baseAllocator_) {
-        _shared->ownBaseAllocator = base::baseAllocator_ = new BaseAllocator;
+        _shared->ownBaseAllocator = base::baseAllocator_ = fst::memory::__new<BaseAllocator>();
       }
 
       if (chunk_header* chunk

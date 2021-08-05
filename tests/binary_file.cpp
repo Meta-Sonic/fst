@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "fst/binary_file.h"
+#include "fst/small_vector.h"
 
 namespace {
 struct abc {
@@ -70,5 +71,34 @@ TEST(binary_file, view) {
   fst::binary_file::loader data_loader;
   EXPECT_FALSE(data_loader.load(data));
   check_loader(data_loader);
+}
+
+template <typename T>
+using vector_type = fst::small_vector<T, 8>;
+
+using writer_type = fst::binary_file::writer_t<vector_type>;
+
+TEST(binary_file, custom_vector) {
+  abc a0 = { 0, 1, 2 };
+  abc a1 = { 3, 4, 5 };
+
+  writer_type w;
+  w.add_chunk("a0", a0);
+  w.add_chunk("a1", a1);
+
+  EXPECT_EQ(w.add_chunk("a1", a1), fst::binary_file::write_error::duplicate_name);
+  EXPECT_EQ(w.add_chunk("a2", abcd{}), writer_type::error_type::empty_data);
+
+  fst::byte_vector data = w.write_to_buffer();
+
+  fst::binary_file::loader data_loader;
+  EXPECT_FALSE(data_loader.load(data));
+  check_loader(data_loader);
+
+  EXPECT_FALSE(w.write_to_file(std::filesystem::temp_directory_path() / "data_file.data"));
+
+  fst::binary_file::loader file_loader;
+  EXPECT_FALSE(file_loader.load(std::filesystem::temp_directory_path() / "data_file.data"));
+  check_loader(file_loader);
 }
 } // namespace

@@ -36,6 +36,7 @@
 #include <fst/math>
 #include <cstdlib>
 #include <memory>
+#include <type_traits>
 
 // clang-format off
 #if __FST_UNISTD__
@@ -60,6 +61,56 @@ namespace fst::memory {
 inline void* malloc(std::size_t size) { return std::malloc(size); }
 inline void* realloc(void* ptr, std::size_t new_size) { return std::realloc(ptr, new_size); }
 inline void free(void* ptr) { std::free(ptr); }
+
+template <class T, class... Args>
+std::enable_if_t<!std::is_array<T>::value, T*> __new(Args&&... args) {
+  return new T(std::forward<Args>(args)...);
+}
+
+template <class T>
+std::enable_if_t<std::is_unbounded_array_v<T>, std::remove_extent_t<T>*> __new(std::size_t n) {
+  return new std::remove_extent_t<T>[n]();
+}
+
+template <class T>
+std::enable_if_t<std::is_bounded_array_v<T>, std::remove_extent_t<T>*> __new() {
+  return new std::remove_extent_t<T>[std::extent_v<T>]();
+}
+
+template <class T, class... Args>
+T* new_pointer(Args&&... args) {
+  return new T(std::forward<Args>(args)...);
+}
+
+template <class T>
+T* new_array(std::size_t n) {
+  return new T[n]();
+}
+
+template <class T>
+std::enable_if_t<!std::is_array<T>::value, void> __delete(std::remove_extent_t<T>* value) {
+  delete value;
+}
+
+template <class T>
+std::enable_if_t<std::is_array<T>::value, void> __delete(std::remove_extent_t<T>* value) {
+  delete[] value;
+}
+
+template <class T>
+void delete_array(T* value) {
+  delete[] value;
+}
+
+// template <class T>
+// std::enable_if_t<std::is_unbounded_array_v<T>, void> __delete(std::remove_extent_t<T>* value) {
+//  delete[] value;
+//}
+
+// template <class T>
+// std::enable_if_t<std::is_bounded_array_v<T>, void> __delete(std::remove_extent_t<T>* value) {
+//  delete[] value;
+//}
 
 template <std::size_t N>
 inline constexpr std::size_t aligned_size(std::size_t size) {

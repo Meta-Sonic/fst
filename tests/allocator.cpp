@@ -6,6 +6,27 @@
 #include <vector>
 
 namespace {
+TEST(allocator, vector) {
+  using pool_allocator_type = fst::memory_pool_allocator<>;
+  using allocator_type = fst::allocator<int, pool_allocator_type>;
+
+  constexpr std::size_t n_int = 64;
+  constexpr std::size_t data_size = n_int * sizeof(int) + pool_allocator_type::minimum_content_size;
+
+  std::array<std::uint8_t, data_size> data;
+  pool_allocator_type pool(data.data(), data.size());
+
+  EXPECT_FALSE(pool.is_shared());
+
+  std::vector<int, allocator_type> vec((pool));
+
+  EXPECT_TRUE(pool.is_shared());
+
+  //  std::vector<int, allocator_type> vec2 = std::move(vec);
+
+  //  EXPECT_FALSE(pool.is_shared());
+}
+
 TEST(allocator, std) {
   using pool_allocator_type = fst::memory_pool_allocator<>;
   using allocator_type = fst::allocator<int, pool_allocator_type>;
