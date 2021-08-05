@@ -49,6 +49,14 @@
   #include <stdlib.h>
   #include <windows.h>
   #include <sysinfoapi.h>
+  
+  #ifdef max
+    #undef max
+  #endif
+
+  #ifdef min
+    #undef min
+  #endif
 
 #elif __FST_LINUX__
   #include <cstdio>
