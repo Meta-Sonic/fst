@@ -36,6 +36,7 @@
 #include <fst/unused>
 #include <fst/memory>
 #include <fst/traits>
+#include <fst/pointer>
 #include <cstring>
 
 // https://github.com/Tencent/rapidjson/blob/master/include/rapidjson/allocators.h
@@ -149,10 +150,17 @@ class memory_pool_allocator : private detail::memory_pool_base<BaseAllocator>,
     chunk_header* next;
   };
 
+public:
+  struct refcount_type {
+    bool own_buffer : 1 = false;
+    std::uint32_t refcount : 31 = 0;
+  };
+
   struct alignas(default_alignement) shared_data : detail::shared_data_base<BaseAllocator> {
     /// Head of the chunk linked-list. Only the head chunk serves allocation.
     chunk_header* chunk_head;
-    std::size_t refcount;
+    //    refcount_type
+    std::uint32_t refcount;
     bool own_buffer;
   };
 

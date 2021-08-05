@@ -195,10 +195,12 @@ public:
   optional_owned_ptr(std::unique_ptr<element_type>&& ptr) noexcept
       : optional_owned_ptr(ptr.release(), true) {}
 
-  optional_owned_ptr(const optional_owned_ptr& oop) {
-    fst_assert(!oop.is_owned(), "Can't copy an owned pointer.");
-    _ptr = oop._ptr;
-    _is_owned = false;
+  optional_owned_ptr(const optional_owned_ptr& oop)
+      : _ptr(oop._ptr)
+      , _is_owned(false) {
+    //    fst_assert(!oop.is_owned(), "Can't copy an owned pointer.");
+    //    _ptr = oop._ptr;
+    //    _is_owned = false;
   }
 
   optional_owned_ptr(optional_owned_ptr&& oop)
@@ -211,7 +213,7 @@ public:
   ~optional_owned_ptr() { reset(); }
 
   optional_owned_ptr& operator=(const optional_owned_ptr& oop) {
-    fst_assert(!oop.is_owned(), "Can't copy an owned pointer.");
+    //    fst_assert(!oop.is_owned(), "Can't copy an owned pointer.");
 
     reset();
     _ptr = oop._ptr;
@@ -241,6 +243,8 @@ public:
   inline bool is_owned() const { return _is_owned; }
 
   inline pointer get() const noexcept { return _ptr; }
+
+  inline operator pointer() const noexcept { return _ptr; }
 
   typename std::add_lvalue_reference<element_type>::type operator*() const { return *_ptr; }
 

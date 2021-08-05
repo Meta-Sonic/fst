@@ -7,6 +7,7 @@
 
 namespace {
 TEST(allocator, vector) {
+  fst::print("ALLLL", sizeof(fst::memory_pool_allocator<>::shared_data));
   using pool_allocator_type = fst::memory_pool_allocator<>;
   using allocator_type = fst::allocator<int, pool_allocator_type>;
 
