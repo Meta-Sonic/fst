@@ -41,6 +41,7 @@ template <class T, class Enum, size_t N = size_t(Enum::count)>
 struct enum_array : public std::array<T, N> {
   using enum_type = Enum;
   using array_t = std::array<T, N>;
+  using value_type = typename array_t::value_type;
   using reference = typename array_t::reference;
   using const_reference = typename array_t::const_reference;
 

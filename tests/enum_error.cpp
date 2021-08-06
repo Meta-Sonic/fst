@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 #include "fst/enum_error.h"
+#include "fst/enum_array.h"
+#include <string_view>
 
 namespace {
 enum class error_type { none, type_1, type_2 };
@@ -55,6 +57,27 @@ TEST(enum_error, copy) {
   EXPECT_EQ(r1, error_type::type_1);
   EXPECT_NE(r1, error_type::none);
   EXPECT_TRUE(r1);
+}
+
+enum class error_type2 { none, type_1, type_2, count };
+struct bbb {
+  static constexpr fst::enum_array<const char*, error_type2> array = { { "No error", "type_1", "type_2" } };
+};
+using error_t = fst::enum_error<error_type2, error_type2::none, bbb>;
+
+TEST(enum_error, to_string) {
+  error_t e0 = error_type2::none;
+  EXPECT_EQ(e0.to_string(), "No error");
+
+  e0 = error_type2::type_1;
+  EXPECT_EQ(e0.to_string(), "type_1");
+
+  e0 = error_type2::type_2;
+  EXPECT_EQ(e0.to_string(), "type_2");
+  EXPECT_EQ(e0, "type_2");
+
+  EXPECT_EQ(e0.is_valid(), false);
+  EXPECT_TRUE(e0);
 }
 
 } // namespace
