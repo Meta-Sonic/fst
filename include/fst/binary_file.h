@@ -60,20 +60,18 @@ namespace detail {
     static constexpr std::size_t uid_size = header_id_size;
     char uid[uid_size];
     std::uint32_t n_chunk;
+
+    inline const chunk_info* get_chunk_info_from_offset(std::size_t offset) const {
+      return reinterpret_cast<const chunk_info*>(reinterpret_cast<const std::uint8_t*>(this) + offset);
+    }
   };
 
-  inline static std::ptrdiff_t get_chunk_info_offset(std::size_t index) {
+  static_assert(sizeof(chunk_info) == 12, "sizeof(chunk_info) should be 12.");
+  static_assert(sizeof(header) == 8, "sizeof(header_id_size) should be 8.");
+
+  inline static constexpr std::ptrdiff_t get_chunk_info_offset(std::size_t index) {
     return sizeof(header) + index * sizeof(chunk_info);
   }
-
-  inline static const chunk_info* get_chunk_info(const header* h, std::size_t index) {
-    return reinterpret_cast<const chunk_info*>(reinterpret_cast<const std::uint8_t*>(h) + get_chunk_info_offset(index));
-  }
-
-  inline static const chunk_info* get_chunk_info_from_offset(const header* h, std::size_t offset) {
-    return reinterpret_cast<const chunk_info*>(reinterpret_cast<const std::uint8_t*>(h) + offset);
-  }
-
 } // namespace detail.
 
 /// Loader.
@@ -120,7 +118,8 @@ public:
         return error_type::wrong_chunk_size;
       }
 
-      const detail::chunk_info* c = detail::get_chunk_info_from_offset(&h, c_offset);
+      //      const detail::chunk_info* c = detail::get_chunk_info_from_offset(&h, c_offset);
+      const detail::chunk_info* c = h.get_chunk_info_from_offset(c_offset);
 
       if (c->size == 0) {
         continue;
@@ -296,6 +295,7 @@ private:
     bool is_view : 1 = false;
     std::uint32_t index : 31 = 0;
   };
+  static_assert(sizeof(index_t) == 4, "sizeof(index_t) should be 4.");
 
   struct name_info {
     string_type name;

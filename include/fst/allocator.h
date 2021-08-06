@@ -152,16 +152,16 @@ class memory_pool_allocator : private detail::memory_pool_base<BaseAllocator>,
 
 public:
   struct refcount_type {
-    bool own_buffer : 1 = false;
-    std::uint32_t refcount : 31 = 0;
+    bool own_buffer : 1; // = false;
+    std::uint32_t refcount : 31; // = 0;
   };
 
   struct alignas(default_alignement) shared_data : detail::shared_data_base<BaseAllocator> {
     /// Head of the chunk linked-list. Only the head chunk serves allocation.
     chunk_header* chunk_head;
-    //    refcount_type
-    std::uint32_t refcount;
-    bool own_buffer;
+    refcount_type rc;
+    //    std::uint32_t refcount;
+    //    bool own_buffer;
   };
 
   static inline chunk_header* GetChunkHead(shared_data* shared) {
@@ -200,8 +200,8 @@ public:
     _shared->chunk_head->capacity = 0;
     _shared->chunk_head->size = 0;
     _shared->chunk_head->next = 0;
-    _shared->own_buffer = true;
-    _shared->refcount = 1;
+    _shared->rc.own_buffer = true;
+    _shared->rc.refcount = 1;
   }
 
   template <bool _Dummy = true, class = enable_if_has_base<_Dummy>>
@@ -219,8 +219,8 @@ public:
     _shared->chunk_head->capacity = 0;
     _shared->chunk_head->size = 0;
     _shared->chunk_head->next = 0;
-    _shared->own_buffer = true;
-    _shared->refcount = 1;
+    _shared->rc.own_buffer = true;
+    _shared->rc.refcount = 1;
   }
 
   /// Constructor with user-supplied buffer.
@@ -243,8 +243,8 @@ public:
     h.capacity = size - minimum_content_size;
     h.size = 0;
     h.next = 0;
-    _shared->own_buffer = false;
-    _shared->refcount = 1;
+    _shared->rc.own_buffer = false;
+    _shared->rc.refcount = 1;
   }
 
   template <bool _Dummy = true, class = enable_if_has_base<_Dummy>>
@@ -261,8 +261,8 @@ public:
     _shared->chunk_head->size = 0;
     _shared->chunk_head->next = 0;
     _shared->ownBaseAllocator = 0;
-    _shared->own_buffer = false;
-    _shared->refcount = 1;
+    _shared->rc.own_buffer = false;
+    _shared->rc.refcount = 1;
   }
 
   memory_pool_allocator(const memory_pool_allocator& rhs) noexcept
@@ -274,8 +274,8 @@ public:
       base::baseAllocator_ = rhs.baseAllocator_;
     }
 
-    fst_noexcept_assert(_shared->refcount > 0, "");
-    ++_shared->refcount;
+    fst_noexcept_assert(_shared->rc.refcount > 0, "");
+    ++_shared->rc.refcount;
   }
 
   memory_pool_allocator& operator=(const memory_pool_allocator& rhs) noexcept {
@@ -299,7 +299,7 @@ public:
       base::baseAllocator_ = rhs.baseAllocator_;
     }
 
-    fst_noexcept_assert(rhs._shared->refcount > 0, "");
+    fst_noexcept_assert(rhs._shared->rc.refcount > 0, "");
     rhs._shared = 0;
   }
 
@@ -322,8 +322,8 @@ public:
       // do nothing if moved
       return;
     }
-    if (_shared->refcount > 1) {
-      --_shared->refcount;
+    if (_shared->rc.refcount > 1) {
+      --_shared->rc.refcount;
       return;
     }
 
@@ -337,7 +337,7 @@ public:
       fst::memory::__delete(a);
     }
     else {
-      if (_shared->own_buffer) {
+      if (_shared->rc.own_buffer) {
         BaseAllocator().free(_shared);
       }
     }
@@ -345,7 +345,7 @@ public:
 
   /// Deallocates all memory chunks, excluding the first/user one.
   void clear() noexcept {
-    fst_noexcept_assert(_shared->refcount > 0, "");
+    fst_noexcept_assert(_shared->rc.refcount > 0, "");
 
     for (;;) {
       chunk_header* c = _shared->chunk_head;
@@ -390,13 +390,13 @@ public:
 
   /// Whether the allocator is shared.
   bool is_shared() const noexcept {
-    fst_noexcept_assert(_shared->refcount > 0, "");
-    return _shared->refcount > 1;
+    fst_noexcept_assert(_shared->rc.refcount > 0, "");
+    return _shared->rc.refcount > 1;
   }
 
   /// Allocates a memory block. (concept Allocator)
   void* allocate(std::size_t size) {
-    fst_noexcept_assert(_shared->refcount > 0, "");
+    fst_noexcept_assert(_shared->rc.refcount > 0, "");
 
     if (!size) {
       return nullptr;
@@ -420,7 +420,7 @@ public:
       return allocate(newSize);
     }
 
-    fst_noexcept_assert(_shared->refcount > 0, "");
+    fst_noexcept_assert(_shared->rc.refcount > 0, "");
     if (newSize == 0) {
       return nullptr;
     }
