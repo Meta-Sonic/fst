@@ -43,14 +43,11 @@ namespace enum_error_detail {
     using array_type = decltype(_ToStringEnumArray::array);
     using enum_type = typename array_type::enum_type;
     using value_type = typename array_type::value_type;
+    using const_reference = typename array_type::const_reference;
     static constexpr const array_type& string_array = _ToStringEnumArray::array;
 
-    static constexpr bool is_convertible_to_string_view
-        = std::is_convertible_v<const value_type&,
-              std::basic_string_view<char,
-                  std::char_traits<char>>> || std::is_convertible_v<const value_type&, const char*>;
-
-    static_assert(is_convertible_to_string_view, "To string array::value_type must be convertible to string_view.");
+    static_assert(std::is_convertible_v<const_reference, std::basic_string_view<char>>,
+        "To string array::value_type must be convertible to string_view.");
 
     inline static constexpr std::string_view to_string(enum_type e) { return string_array[e]; }
   };
@@ -65,12 +62,16 @@ namespace enum_error_detail {
 
 template <typename _Enum, _Enum _ValidResult = (_Enum)0, typename _ToStringEnumArray = void>
 class enum_error : private enum_error_detail::to_string_array_base<_ToStringEnumArray> {
+
+  using to_string_base = enum_error_detail::to_string_array_base<_ToStringEnumArray>;
+  using has_base = std::bool_constant<!std::is_same_v<_ToStringEnumArray, void>>;
+
+  template <bool _Dummy, class _D = dependent_type_condition<_Dummy, has_base>>
+  using enable_if_has_base = enable_if_same<_Dummy, _D>;
+
 public:
   using enum_type = _Enum;
   static constexpr _Enum valid_result = _ValidResult;
-  using to_string_base = enum_error_detail::to_string_array_base<_ToStringEnumArray>;
-
-  using has_base = std::bool_constant<!std::is_same_v<_ToStringEnumArray, void>>;
 
   constexpr enum_error() noexcept = default;
   constexpr enum_error(const enum_error&) noexcept = default;
@@ -95,9 +96,6 @@ public:
   inline constexpr bool operator!=(bool b) const noexcept { return is_valid() == b; }
 
   inline constexpr operator enum_type() const noexcept { return _result; }
-
-  template <bool _Dummy, class _D = dependent_type_condition<_Dummy, has_base>>
-  using enable_if_has_base = enable_if_same<_Dummy, _D>;
 
   template <bool _Dummy = true, class = enable_if_has_base<_Dummy>>
   inline constexpr std::string_view to_string() const {

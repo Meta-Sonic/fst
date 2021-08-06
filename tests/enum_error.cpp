@@ -80,4 +80,25 @@ TEST(enum_error, to_string) {
   EXPECT_TRUE(e0);
 }
 
+enum class error_type3 { none, type_1, type_2, count };
+struct error_info {
+  static constexpr fst::enum_array<const char*, error_type3> array = { { "No error", "type_1", "type_2" } };
+};
+using error_t2 = fst::enum_error<error_type3, error_type3::none, error_info>;
+
+TEST(enum_error, to_string_2) {
+  error_t2 e0 = error_type3::none;
+  EXPECT_EQ(e0.to_string(), "No error");
+
+  e0 = error_type3::type_1;
+  EXPECT_EQ(e0.to_string(), "type_1");
+
+  e0 = error_type3::type_2;
+  EXPECT_EQ(e0.to_string(), "type_2");
+  EXPECT_EQ(e0, "type_2");
+
+  EXPECT_EQ(e0.is_valid(), false);
+  EXPECT_TRUE(e0);
+}
+
 } // namespace
