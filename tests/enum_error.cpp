@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "fst/enum_error.h"
 #include "fst/enum_array.h"
+#include "fst/print.h"
 #include <string_view>
 
 namespace {
@@ -80,25 +81,24 @@ TEST(enum_error, to_string) {
   EXPECT_TRUE(e0);
 }
 
-enum class error_type3 { none, type_1, type_2, count };
 struct error_info {
-  static constexpr fst::enum_array<const char*, error_type3> array = { { "No error", "type_1", "type_2" } };
+  enum class enum_type { none, type_1, type_2 };
+  static constexpr fst::enum_array<const char*, enum_type, enum_type::type_2> array
+      = { { "No error", "type_1", "type_2" } };
 };
-using error_t2 = fst::enum_error<error_type3, error_type3::none, error_info>;
 
 TEST(enum_error, to_string_2) {
-  error_t2 e0 = error_type3::none;
+  using error_t = fst::enum_error<error_info>;
+  using error_type = typename error_t::enum_type;
+
+  EXPECT_EQ(error_info::array.size(), 3);
+
+  error_t e0 = error_type::none;
   EXPECT_EQ(e0.to_string(), "No error");
 
-  e0 = error_type3::type_1;
+  e0 = error_type::type_1;
   EXPECT_EQ(e0.to_string(), "type_1");
-
-  e0 = error_type3::type_2;
-  EXPECT_EQ(e0.to_string(), "type_2");
-  EXPECT_EQ(e0, "type_2");
-
-  EXPECT_EQ(e0.is_valid(), false);
-  EXPECT_TRUE(e0);
+  fst::print("ERROR TYPE", e0);
 }
 
 } // namespace

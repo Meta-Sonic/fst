@@ -43,7 +43,14 @@ TEST(binary_file, std) {
   fst::byte_vector data = w.write_to_buffer();
 
   fst::binary_file::loader data_loader;
-  EXPECT_FALSE(data_loader.load(data));
+  fst::binary_file::loader::error_t err = data_loader.load(data);
+  EXPECT_FALSE(err);
+  fst::print("DALKJDAKJDA", err.to_string());
+  EXPECT_EQ(err, fst::binary_file::loader::error_type::none);
+  EXPECT_EQ(err, std::string_view("No error"));
+  EXPECT_EQ(err, "No error");
+  EXPECT_TRUE(err == "No error");
+
   check_loader(data_loader);
 
   EXPECT_FALSE(w.write_to_file(std::filesystem::temp_directory_path() / "data_file.data"));

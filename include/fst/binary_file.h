@@ -79,7 +79,13 @@ class loader {
 public:
   enum class error_type { none, open_file, invalid_header, invalid_header_id, empty_chunk_size, wrong_chunk_size };
 
-  using error_t = fst::enum_error<error_type, error_type::none>;
+  struct error_info {
+    using enum_type = error_type;
+    static constexpr fst::enum_array<const char*, enum_type, enum_type::wrong_chunk_size> array = { { "No error",
+        "open_file", "invalid_header", "invalid_header_id", "empty_chunk_size", "wrong_chunk_size" } };
+  };
+
+  using error_t = fst::enum_error<error_info, error_info::enum_type::none>;
 
   error_t load(const std::filesystem::path& file_path) {
     _file.close();

@@ -1,7 +1,7 @@
 ///
 /// BSD 3-Clause License
 ///
-/// Copyright (c) 2020, Alexandre Arsenault
+/// Copyright (c) 2021, Alexandre Arsenault
 /// All rights reserved.
 ///
 /// Redistribution and use in source and binary forms, with or without
@@ -37,10 +37,38 @@
 #include <utility>
 
 namespace fst {
-template <class T, class Enum, size_t N = size_t(Enum::count)>
-struct enum_array : public std::array<T, N> {
+namespace detail {
+  template <typename _Enum, typename = void>
+  struct enum_has_count : std::false_type {};
+
+  template <typename _Enum>
+  struct enum_has_count<_Enum, decltype((void)_Enum::count, void())> : std::true_type {};
+
+  template <typename _Enum>
+  inline constexpr _Enum get_default_enum_array_count() {
+    if constexpr (enum_has_count<_Enum>::value) {
+      return _Enum::count;
+    }
+    else {
+      return (_Enum)0;
+    }
+  }
+
+  template <typename _Enum, _Enum _Count>
+  inline constexpr std::size_t get_enum_array_count() {
+    if constexpr (enum_has_count<_Enum>::value) {
+      return (std::size_t)_Enum::count;
+    }
+    else {
+      return (std::size_t)_Count + 1;
+    }
+  }
+} // namespace detail.
+
+template <class T, class Enum, Enum _Count = detail::get_default_enum_array_count<Enum>()>
+struct enum_array : public std::array<T, detail::get_enum_array_count<Enum, _Count>()> {
   using enum_type = Enum;
-  using array_t = std::array<T, N>;
+  using array_t = std::array<T, detail::get_enum_array_count<Enum, _Count>()>;
   using value_type = typename array_t::value_type;
   using reference = typename array_t::reference;
   using const_reference = typename array_t::const_reference;
@@ -63,4 +91,18 @@ struct enum_array : public std::array<T, N> {
   constexpr reference operator[](Enum e) noexcept { return array_t::operator[](size_t(e)); }
   constexpr const_reference operator[](Enum e) const noexcept { return array_t::operator[](size_t(e)); }
 };
+
+// template <typename _Enum, typename T, std::size_t N = std::size_t(_Enum::count)>
+// inline constexpr fst::enum_array<T, _Enum> make_enum_array(const T (&values)[N]) {
+//  fst::enum_array<T, _Enum> array;
+//  for (std::size_t i = 0; i < N; i++) {
+//    array[i] = values[i];
+//  }
+//  return array;
+//}
+//
+// template <typename _Enum, typename... Args>
+// inline constexpr fst::enum_array<std::common_type_t<Args...>, _Enum> make_enum_array(Args&&... args) {
+//  return fst::enum_array<std::common_type_t<Args...>, _Enum>{ {std::forward<Args>(args)...} };
+//}
 } // namespace fst.
